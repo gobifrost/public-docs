@@ -40,3 +40,9 @@ External pull requests need maintainer review before merge. Maintainer-authored 
 Maintainers should keep `main` protected: require pull requests, the `docs-quality` status check, and resolved conversations. Do not allow direct pushes, force pushes, or branch deletion. First-time external contributions require maintainer review before merge.
 
 The [CODEOWNERS](.github/CODEOWNERS) file routes review requests to the owners for documentation, configuration, scripts, and lockfiles.
+
+## Publication
+
+After a maintainer merges a documentation PR, the private website checks for approved updates hourly. It opens a revision-update PR, validates the combined website, and merges the update after its checks pass. Vercel then publishes the website. Maintainers can trigger the sync manually when a change needs to go live sooner.
+
+You can preview and contribute here without access to the private website. A successful documentation build is required before merge; publication also depends on the combined website build succeeding.
