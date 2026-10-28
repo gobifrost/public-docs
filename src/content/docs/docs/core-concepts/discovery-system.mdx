@@ -1,0 +1,153 @@
+---
+title: Workflow Registration
+description: How to register workflows and data providers with the Bifrost platform
+---
+
+import { Aside } from "@astrojs/starlight/components";
+
+Bifrost uses a two-step process for workflows and data providers: **write your code**, then **register it**. Registration tells the platform to index the function's metadata (name, description, parameters) so it appears in the UI and becomes executable.
+
+## How It Works
+
+1. **Write your code** — Create a Python file with a `@workflow` or `@data_provider` decorator
+2. **Register the function** — Tell the platform which function to index
+3. **Platform indexes metadata** — Name, description, parameters, and category are extracted from the decorator and function signature
+4. **Workflow appears** — Shows up in the Workflows page, can be tied to forms, scheduled, or called via API
+
+<Aside type="tip">
+Registration only needs to happen once per function. After that, saving changes to the file automatically updates the indexed metadata.
+</Aside>
+
+## Registration Methods
+
+### CodeLens in the Code Editor (Recommended)
+
+The built-in Code Editor uses **CodeLens** — inline annotations that appear directly above each decorated function. When you open a Python file containing `@workflow`, `@tool`, or `@data_provider` decorators, the editor automatically detects them and shows a clickable CodeLens above each one:
+
+- **Unregistered functions** show a **Register workflow** (or **Register tool** / **Register data provider**) action. Click it to open a dialog where you select the target organization (or register globally), then confirm.
+- **Registered functions** show a **Registered** badge with scope information (e.g. "Org-scoped" or "Global").
+
+After registering, the CodeLens updates immediately to reflect the new status — no page refresh needed.
+
+<Aside type="tip">
+CodeLens registration also handles **reactivation**. If you previously deleted a workflow and re-register the same function, the platform reuses the original UUID so that any references (event subscriptions, form bindings) still work.
+</Aside>
+
+### API
+
+Send a POST request to register a function by file path and function name:
+
+```bash
+POST /api/workflows/register
+Content-Type: application/json
+
+{
+    "file_path": "create_user.py",
+    "function_name": "create_user"
+}
+```
+
+### CLI
+
+Register a local function by its workspace path and Python function name:
+
+```bash
+bifrost workflows register --path workflows/create_user.py --function-name create_user
+```
+
+### MCP
+
+From the root `/mcp` endpoint, find and load an agent that can manage workflows, inspect its registration tool schema, then execute it through the gateway:
+
+```
+bifrost_find_agents(query="register the create_user workflow")
+bifrost_get_agent(agent_id="...")
+bifrost_get_tool_schema(agent_id="...", tool_ref="...")
+bifrost_execute_tool(agent_id="...", tool_ref="...", arguments={...})
+```
+
+## Preflight Validation
+
+The platform provides a preflight check that scans your workspace for decorated functions that haven't been registered yet. This helps catch functions you may have forgotten to register.
+
+Access it via `POST /api/maintenance/preflight` or through the Code Editor's diagnostics.
+
+## Writing Discoverable Code
+
+### Use the `@workflow` decorator
+
+```python
+from bifrost import workflow
+
+@workflow(category="communications")
+async def send_email(recipient: str, subject: str, body: str = ""):
+    """Send email notification to a user."""
+    # Your code here
+    return {"sent": True}
+```
+
+The decorator automatically infers:
+- **name**: `"send_email"` from the function name
+- **description**: `"Send email notification to a user."` from the docstring
+- **parameters**: from the function signature (types and defaults)
+
+### Data providers work the same way
+
+```python
+from bifrost import data_provider, context
+
+@data_provider(
+    name="get_licenses",
+    description="Available M365 licenses"
+)
+async def get_licenses():
+    org_id = context.org_id
+    return [
+        {"label": "Microsoft 365 E3", "value": "SPE_E3"},
+        {"label": "Microsoft 365 E5", "value": "SPE_E5"}
+    ]
+```
+
+Use it in form dropdowns by referencing the data provider name.
+
+## Rules for Registration
+
+Your files must follow these rules:
+
+1. **Use the `.py` extension** — Only Python files are scanned
+2. **Don't start filenames with `_`** — Files like `_helpers.py` are skipped
+3. **Use the `@workflow` or `@data_provider` decorator** — Undecorated functions won't be recognized
+4. **Import from `bifrost`** — Use `from bifrost import workflow`
+5. **Register the function** — Writing the file is not enough; you must register it
+
+## Workspace Storage
+
+Workspace files are stored in S3-compatible storage (MinIO locally, AWS S3 in production):
+
+- **Object storage** is the source of truth for every workspace file
+- **Python modules** are cached in Redis as they are saved, so every worker runs the latest code
+- **Horizontal scaling** enabled — workers load modules from the cache, falling back to object storage
+
+This architecture allows you to scale workers independently without shared filesystem requirements.
+
+## Common Issues
+
+### My workflow isn't appearing
+
+1. **Did you register it?** — Writing the file is only step one. You must also register the function via the Code Editor, API, or MCP
+2. **Check your decorator** — Make sure you have `@workflow` above your function
+3. **Check your imports** — Use `from bifrost import workflow`
+4. **Check your filename** — Files starting with `_` are ignored (like `_helpers.py`)
+5. **Check for errors** — Look at the application logs for import errors
+
+### My parameters aren't showing in forms
+
+1. **Use type hints** — Parameters are extracted from the function signature
+    ```python
+    @workflow
+    async def test(name: str, count: int = 1):
+        """Example workflow."""
+        pass
+    ```
+
+2. **Make sure types are valid** — Use `str`, `int`, `float`, `bool`, `list`, or `dict`

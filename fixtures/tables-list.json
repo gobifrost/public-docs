@@ -1,0 +1,99 @@
+{
+  "tables": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "name": "onboarding_checklists",
+      "description": "Per-employee onboarding tasks tracked by the HR workflow.",
+      "schema": {
+        "fields": [
+          { "name": "employee_name", "type": "string" },
+          { "name": "status", "type": "string" },
+          { "name": "assigned_to", "type": "string" }
+        ]
+      },
+      "organization_id": null,
+      "policies": {
+        "policies": [
+          {
+            "name": "admin_bypass",
+            "description": "Platform admins bypass all checks.",
+            "actions": ["read", "create", "update", "delete"],
+            "when": { "user": "is_platform_admin" }
+          }
+        ]
+      },
+      "created_at": "2026-05-02T14:21:09.000Z",
+      "updated_at": "2026-06-10T09:14:33.000Z",
+      "created_by": "platform-admin@acme.com",
+      "is_solution_managed": false,
+      "solution_id": null,
+      "orphaned_at": null,
+      "origin_solution_slug": null
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "name": "asset_inventory",
+      "description": "Hardware and license inventory synced nightly from RMM.",
+      "schema": null,
+      "organization_id": null,
+      "policies": {
+        "policies": [
+          {
+            "name": "support_team_read",
+            "description": "Support agents can read all inventory rows.",
+            "actions": ["read"],
+            "when": { "call": "has_role", "args": ["support"] }
+          }
+        ]
+      },
+      "created_at": "2026-04-18T08:02:55.000Z",
+      "updated_at": "2026-06-12T17:45:01.000Z",
+      "created_by": "platform-admin@acme.com",
+      "is_solution_managed": false,
+      "solution_id": null,
+      "orphaned_at": null,
+      "origin_solution_slug": null
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "name": "ticket_routing_rules",
+      "description": "Routing rules consumed by the triage agent.",
+      "schema": null,
+      "organization_id": "aaaa0000-0000-0000-0000-0000000000aa",
+      "policies": null,
+      "created_at": "2026-05-21T11:30:00.000Z",
+      "updated_at": "2026-06-01T13:12:48.000Z",
+      "created_by": "ops@northwind.io",
+      "is_solution_managed": false,
+      "solution_id": null,
+      "orphaned_at": null,
+      "origin_solution_slug": null
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444444",
+      "name": "cyber_questionnaire_responses",
+      "description": "Answers collected by the Cyber Insurance Solution.",
+      "schema": null,
+      "organization_id": null,
+      "policies": {
+        "policies": [
+          {
+            "name": "own_org_read",
+            "actions": ["read"],
+            "when": {
+              "eq": [{ "row": "organization_id" }, { "user": "organization_id" }]
+            }
+          }
+        ]
+      },
+      "created_at": "2026-03-09T19:48:12.000Z",
+      "updated_at": "2026-06-14T07:55:20.000Z",
+      "created_by": "deploy@bifrost",
+      "is_solution_managed": true,
+      "solution_id": "55555555-5555-5555-5555-555555555555",
+      "orphaned_at": null,
+      "origin_solution_slug": null
+    }
+  ],
+  "total": 4
+}

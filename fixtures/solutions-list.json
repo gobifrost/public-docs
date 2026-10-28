@@ -1,0 +1,68 @@
+{
+  "solutions": [
+    {
+      "id": "5a1a1a1a-1111-1111-1111-111111111111",
+      "slug": "client-onboarding",
+      "name": "Client Onboarding",
+      "organization_id": null,
+      "global_repo_access": false,
+      "git_connected": true,
+      "git_repo_url": "https://github.com/acme-solutions/client-onboarding",
+      "repo_subpath": null,
+      "git_ref": "main",
+      "version": "2.3.0",
+      "upgraded_from_version": "2.2.1",
+      "update_available_version": "2.4.0",
+      "setup_complete": true,
+      "scope": "global"
+    },
+    {
+      "id": "5b2b2b2b-2222-2222-2222-222222222222",
+      "slug": "cyber-insurance-questionnaire",
+      "name": "Cyber Insurance Questionnaire",
+      "organization_id": "00000000-0000-0000-0000-000000000002",
+      "global_repo_access": false,
+      "git_connected": true,
+      "git_repo_url": "https://github.com/acme-solutions/omni-pack",
+      "repo_subpath": "solutions/cyber-insurance",
+      "git_ref": "main",
+      "version": "1.5.2",
+      "upgraded_from_version": null,
+      "update_available_version": null,
+      "setup_complete": true,
+      "scope": "org"
+    },
+    {
+      "id": "5c3c3c3c-3333-3333-3333-333333333333",
+      "slug": "quarterly-business-review",
+      "name": "Quarterly Business Review",
+      "organization_id": "00000000-0000-0000-0000-000000000003",
+      "global_repo_access": false,
+      "git_connected": false,
+      "git_repo_url": null,
+      "repo_subpath": null,
+      "git_ref": null,
+      "version": "1.0.0",
+      "upgraded_from_version": null,
+      "update_available_version": null,
+      "setup_complete": false,
+      "scope": "org"
+    },
+    {
+      "id": "5d4d4d4d-4444-4444-4444-444444444444",
+      "slug": "device-lifecycle",
+      "name": "Device Lifecycle Tracker",
+      "organization_id": null,
+      "global_repo_access": true,
+      "git_connected": false,
+      "git_repo_url": null,
+      "repo_subpath": null,
+      "git_ref": null,
+      "version": "3.1.0",
+      "upgraded_from_version": "3.0.0",
+      "update_available_version": null,
+      "setup_complete": true,
+      "scope": "global"
+    }
+  ]
+}

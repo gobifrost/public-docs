@@ -1,0 +1,8 @@
+{
+  "providers": [],
+  "login_preference": {
+    "auto_redirect_to_sso": false,
+    "default_sso_provider": null
+  },
+  "callback_url": "https://app.example.com/auth/oauth/callback"
+}

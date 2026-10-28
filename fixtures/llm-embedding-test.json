@@ -1,0 +1,10 @@
+{
+  "success": true,
+  "message": "Endpoint reachable. 3 embedding models available.",
+  "dimensions": 1536,
+  "models": [
+    "text-embedding-3-small",
+    "text-embedding-3-large",
+    "text-embedding-ada-002"
+  ]
+}

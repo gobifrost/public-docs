@@ -1,0 +1,237 @@
+---
+title: Use the Microsoft Setup Assistant
+description: Discover existing Microsoft resources, then guide an operator through Graph, Teams, and optional CSP or GDAP setup
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Use this prompt with an AI coding or operations assistant that can access your Bifrost instance and Microsoft command-line tools. It first asks what you already have and offers a read-only discovery pass. The result is an evidence-based `reuse`, `repair`, or `create` plan that reserves consent, customer approval, and other privileged choices for a human operator.
+
+For CSP/GDAP setup, pair it with the Microsoft CSP Solution's versioned [Microsoft setup prompt](https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/agent-prompts/microsoft-setup.md) and [community-adoption prompt](https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/agent-prompts/community-adoption.md). Those links are release-pending on the listed branch; use the matching copies supplied with the installed Solution release. The Solution's native setup executors create proposals and confirmed dry-runs only. They are not live Microsoft mutation executors.
+
+<Aside type="caution">
+Review every proposed permission and write action. Do not give an assistant a pasted client secret, refresh token, authorization code, or browser session. Connect approved secret storage and require the assistant to redact tokens from commands, logs, and results.
+</Aside>
+
+## Prompt
+
+```text
+Help me set up Bifrost for multi-customer Microsoft automation.
+
+Use these guides as the source of truth:
+- Architecture: https://gobifrost.com/docs/how-to-guides/integrations/microsoft/architecture/
+- Partner Center: https://gobifrost.com/docs/how-to-guides/integrations/microsoft/partner-center/
+- Microsoft Graph: https://gobifrost.com/docs/how-to-guides/integrations/microsoft/microsoft-graph/
+- GDAP: https://gobifrost.com/docs/how-to-guides/integrations/microsoft/csp-gdap/
+- Shared Teams bot: https://gobifrost.com/docs/how-to-guides/integrations/shared-teams-bot/
+- Microsoft CSP Solution setup prompt: https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/agent-prompts/microsoft-setup.md
+- Microsoft CSP Solution community-adoption prompt: https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/agent-prompts/community-adoption.md
+
+Work in phases and keep a checklist with these states: not started, blocked,
+configured, consented, and verified. Configuration and consent are never the
+same state.
+
+Begin by asking me:
+1. What Entra applications, Bifrost integrations, tenant mappings, Teams bot,
+   or Teams packages are already configured? Do we also use an optional
+   Partner Center/CSP Solution or GDAP relationships?
+2. Which Microsoft capabilities do I want Bifrost to operate?
+3. Which provider tenant and disposable development customer should be in scope?
+4. May you perform read-only discovery through Bifrost, Microsoft Graph, and
+   Partner Center before proposing changes?
+
+Classify the onboarding state before planning a fix:
+- `empty`: no usable app registration, connection, relationship, or mapping.
+- `partial`: one or more prerequisite layers are missing, unverified, or pending approval.
+- `active-but-failing`: setup records exist but the selected operation or tenant probe fails.
+
+For `empty`, propose the minimum foundation for the selected operations. For
+`partial`, verify every existing layer before proposing another registration or
+relationship. For `active-but-failing`, diagnose the actual tenant, audience,
+identity, relationship/assignment/membership, consent, and workload authority
+before requesting additional permissions. Do not create parallel identities to
+mask a failure.
+
+If I authorize discovery, inspect without changing anything:
+1. Identify and verify the provider Entra tenant. Identify a Partner Center
+   account only when CSP automation is in scope.
+2. Inventory the Bifrost Microsoft and Microsoft Teams Bot integrations, plus
+   the optional Microsoft CSP Solution, its install binding, compatibility
+   adapter inputs, and partner-delegated connection.
+3. Inventory existing Entra applications, service principals, Graph grants,
+   GDAP relationships, role assignments, customer tenant mappings, Teams app
+   packages, event sources, subscriptions, and conversation-routing workflows.
+4. Identify provider-specific IDs or secrets embedded in source, setup data, or
+   reusable Solutions.
+5. Check whether other apps or workflows share the Microsoft modules, Workspace
+   registrations/tables, mappings, agents, or event sources that would be changed.
+6. Classify every component as reuse, repair, or create. Include the evidence,
+   dependencies, and next action for each decision.
+7. Report discrepancies and propose a least-privilege permission profile for
+   each requested capability. Do not copy permissions from another provider.
+8. For each required delegated permission, compare the app registration's
+   requested permissions, the enterprise application's tenant consent grant,
+   and the scopes in a newly issued token. Label each permission requested,
+   consented, and effective.
+
+Then give me an execution plan divided into:
+- Actions you can perform through Bifrost, Microsoft Graph, Partner Center, or
+  the CLI
+- Actions that require my interactive sign-in, MFA, consent, customer approval,
+  Teams Admin Center, or Teams Developer Portal
+- Acceptance tests and rollback for every write phase
+
+Execution policy:
+- Prefer automation in this order: read-only Bifrost Solution/CLI discovery,
+  Microsoft Graph through an existing provider-owned setup identity, Azure CLI
+  or Microsoft Graph PowerShell, then Partner Center APIs. Use a portal only
+  when Microsoft exposes no suitable API or an interactive approval is the
+  operation itself. The native Solution setup executor is proposal/dry-run
+  only, so do not represent its plan as a live write.
+- Use the operator's existing authenticated CLI sessions and approved secret
+  manager. Do not request repeated device-code sign-ins. When an interactive
+  sign-in is unavoidable, explain the single action, tenant, identity,
+  permissions, and completion signal before pausing.
+- Discover commands and current API contracts from installed CLI help and
+  official Microsoft documentation. Do not rely on copied portal screenshots
+  or hard-coded object IDs.
+- Execute read-only discovery without asking the operator to manually collect
+  IDs that the APIs can return. For writes, show the exact target and effect,
+  confirm it is within the operator-approved scope, execute the command, and
+  re-read the resulting state. Ask only when the action exceeds that scope or
+  requires a new privileged consent boundary.
+- Treat the active Azure CLI or PowerShell principal as a setup operator, not
+  as proof of the Bifrost runtime identity. Verify the exact Bifrost
+  integration, customer tenant mapping, and fresh runtime workload probe after
+  an approved mutation.
+
+Rules:
+- Treat Microsoft CSP as an optional Solution. When it is present, reuse the
+  provider's Secure Application Model app registration for its Partner Center
+  partner-delegated connection. Do not create a second Partner Center app
+  unless discovery shows the existing app is missing, unsafe, or unsuitable.
+- Use the optional Microsoft CSP partner-delegated connection for Partner
+  Center and delegated GDAP provisioning plans. Use the separate Microsoft client-credentials connection
+  for customer Graph or Exchange automation. Application consent authorizes
+  that app-only runtime; delegated GDAP access does not. Do not silently swap
+  to local credentials or an unrelated tenant.
+- Store credentials only in the approved integration or secret manager. Never
+  print, return, log, or put tokens and secrets in workflow variables.
+- Check active consent authority in the target tenant: Graph application-role
+  consent requires suitably privileged authority beyond Cloud/Application
+  Administrator. Check AdminAgents/GDAP-group prerequisites for Partner Center
+  delegated consent. Inspect both Exchange Application RBAC and Entra grants
+  before claiming mailbox scoping; their permissions can combine.
+- Treat requested, consented, and effective permissions as separate states for
+  each resource audience. If a required permission is absent from the tenant
+  grant or a fresh token for that resource, obtain or pause for consent. Do not
+  ask for reapproval or reconnection when the existing grant and fresh test
+  token already prove the required scope works.
+- Before using optional CSP automation to list GDAP relationships, inspect the
+  provider tenant, resource audience, and current delegated relationship grant.
+  Report a missing grant or stale authorization as the blocker; do not
+  interpret an empty Graph collection as proof that no relationships exist.
+- Resolve every Microsoft customer tenant to exactly one Bifrost organization
+  before customer-scoped work. Reject unknown and ambiguous mappings.
+- Confirm planned writes that grant consent, create or end GDAP relationships,
+  change role assignments, publish or remove a Teams app, install it for users
+  or teams, or mutate customer data remain within the operator-approved scope.
+  Ask only when an action exceeds it or requires a new privileged consent
+  boundary.
+- Prefer self-scoped Teams app installation permissions. Do not add chat-read
+  permissions or RSC unless a named workflow requires message history outside
+  the activities delivered to the bot.
+- Do not claim success from a create or update response. Re-read the resulting
+  Microsoft and Bifrost state and run the documented acceptance test.
+- Record IDs and results needed for audit, but redact customer data and all
+  credentials.
+- Do not bulk-import the legacy community CSP app, its authentication records,
+  or provider-specific mappings. The Solution's install-bound compatibility
+  adapter reads existing Workspace registrations and tables only after an
+  explicit consumer and writer review. Preserve shared consumers until a
+  versioned adoption plan is confirmed.
+
+For Microsoft Graph, and, when in scope, Partner Center and GDAP, guide me through:
+1. Provider prerequisites and a discovery-first reuse, repair, or create plan
+2. If the CSP Solution is in scope, Secure Application Model registration and its
+   OAuth connection
+   - Reconcile requested permissions, tenant consent grants, and effective
+     resource-specific token scopes; seek consent only when a required grant is absent
+3. Capability-based permission selection
+4. Separate Microsoft app registration and client-credentials connection
+5. Partner Center customer discovery
+6. Customer tenant to Bifrost organization mappings
+7. GDAP group design, group membership, relationship creation, customer
+   approval, activation, group assignment, and
+   expiration monitoring
+8. Customer service-principal creation and consent
+9. Read-only verification followed by approved write tests
+
+Use Microsoft Graph, Azure CLI, or Microsoft Graph PowerShell to automate:
+- Application registration, supported account type, owners, redirect URIs,
+  requested resource access, credentials, and service-principal creation
+- Delegated grant and app-role inventory, tenant admin consent where the
+  authenticated setup identity is authorized, and effective-token validation
+- Provider security groups, group membership, GDAP relationship requests,
+  status polling, and access assignments
+- Customer enterprise applications, reviewed permission grants, and drift
+  checks where the CSP/GDAP relationship authorizes the operation
+
+Use Bifrost CLI and, when present, the Microsoft CSP Solution to automate:
+- Integration discovery and connection-state checks
+- Partner Center customer inventory
+- Customer tenant to organization mappings
+- Permission-profile, consent, GDAP template, and assignment verification
+- Exact-target proposals and confirmed dry-runs; do not claim that they execute
+  the live Microsoft mutation
+
+Pause for a human only when the next action requires interactive MFA or OAuth
+consent, customer approval of a GDAP invitation, a business choice about roles
+or group membership, or another Microsoft boundary that the selected identity
+cannot perform through a supported API.
+
+For Teams, guide me through:
+1. Confirming that the chosen bot registration model is currently supported by
+   Microsoft for a new provider
+2. Creating or verifying the provider bot identity and credential
+3. Creating the Microsoft Teams Bot integration and per-customer mappings
+4. Creating a Microsoft Bot Framework event source and subscribing the global
+   tenant-routing workflow
+   - Confirm the adapter authenticates the expected bot app ID and that the
+     native event's tenant maps to exactly one customer organization.
+5. Building and validating the Teams app ZIP
+6. Uploading or publishing it to each customer catalog and storing that
+   tenant-local catalog app ID
+7. Proactive installation and direct-message tests
+8. Channel installation, inbound reply, mention, reaction, and tenant-routing
+   tests
+9. Upgrade and offboarding procedures
+
+Stop and explain the exact blocker if an API does not support application-only
+access, a Microsoft feature is deprecated, or the platform lacks a required
+routing or secret-handling capability. Do not work around those boundaries with
+an unreviewed credential or broad permission.
+
+At the end, produce:
+- A provider setup record
+- One customer acceptance record per tenant
+- The final permission and GDAP role matrices
+- A manual-actions runbook
+- A list of remaining code or documentation gaps
+```
+
+## Recommended First Message
+
+After pasting the prompt, tell the assistant which environment is in scope, which secret-manager profile it may use, whether the first customer is a disposable development tenant, and which capabilities you want to install. Do not provide credentials in the message.
+
+Example:
+
+```text
+We may already have part of this configured. First ask me what exists, then
+offer a read-only audit of our production Bifrost instance and provider tenant.
+Use our work secret-manager profile. Contoso Development is the acceptance
+tenant. We need user and license management, proactive Teams DMs, channel posts,
+and bot replies. We do not need arbitrary Teams chat history.
+```
+
+The assistant should return the inventory and permission proposal before requesting any interactive consent or making customer changes.

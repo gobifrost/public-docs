@@ -1,0 +1,88 @@
+---
+title: Connect Microsoft Graph
+description: Configure the provider-owned application Bifrost uses for app-only access to customer Microsoft tenants
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+The Bifrost `Microsoft` connection is the customer app-only identity used for Microsoft Graph and supported Exchange operations. A workspace may separately use the [Microsoft CSP Solution](https://github.com/gobifrost/microsoft-csp/tree/fix/csp-onboarding-and-app-shell) for Partner Center's partner-delegated app-and-user connection; it is not built into Bifrost and is not required for this connection. The Solution's current setup executors are proposal and confirmed-dry-run surfaces, not live Microsoft mutation executors.
+
+## Start With Discovery
+
+Offer a read-only inventory before creating anything. Inspect existing provider app registrations, service principals, credentials, Graph app-role assignments, customer enterprise applications, Bifrost `Microsoft` integration mappings, every workflow that uses the integration, and the Workspace registrations/tables that an install-bound compatibility adapter would read.
+
+Classify the result as `reuse`, `repair`, or `create`. Reuse is appropriate only when the application is provider-owned, multi-tenant where required, has known consumers, and can be reduced to a reviewed capability-based permission profile. Do not bulk-import the legacy community app or its authentication records; preserve legacy consumers until a versioned compatibility adoption has one reviewed writer per state contract.
+
+## Define Capabilities Before Permissions
+
+Start with the workflows you intend to operate. Typical profiles include:
+
+| Capability | Permission design question |
+| --- | --- |
+| Tenant inventory | Which organization, domain, user, group, or license reads are required? |
+| Identity administration | Which user and group writes are required, and which GDAP roles authorize them? |
+| Mail and calendar | Is delegated access sufficient, or does a workflow require application access? |
+| Exchange administration | Does the workflow require Exchange Online app-only access and an Exchange role? |
+| Teams deployment | Which self-scoped user, team, or chat installation permissions match the supported scopes? |
+| Teams history | Does a named workflow need messages that the bot did not receive directly? If not, omit chat-read and RSC permissions. |
+
+Verify every permission in the current [Microsoft Graph permissions reference](https://learn.microsoft.com/en-us/graph/permissions-reference). Select the minimum application permission for each named operation, then separately review workload authority such as Exchange RBAC, SharePoint site access, Defender roles, licenses, or customer policy. Application consent authorizes the app-only Graph token. GDAP roles, active relationship assignments, and verified group membership can authorize a provider's delegated administration path to provision a customer service principal or consent, but they do not add runtime authority to that app-only token.
+
+## Register or Reuse the Application
+
+<Steps>
+
+1. Reuse a healthy provider-owned application when discovery confirms its consumers and grants. Otherwise, create a provider-owned multi-tenant application.
+
+2. Record its application ID, object ID, supported account types, owners, and credential renewal date.
+
+3. Add only the application permissions selected for the installed capabilities. A manifest change requests permissions; it does not grant them.
+
+4. Create the service principal in the provider tenant and grant the reviewed application roles. Microsoft Graph supports this with `appRoleAssignments` when the caller has the necessary Graph permissions and Entra role.
+
+5. Create a certificate or client secret supported by Bifrost. Store it only in the integration or approved secret manager.
+
+</Steps>
+
+Microsoft Graph can perform the registration, service-principal, owner, redirect-URI, and credential operations listed in the [Partner Center guide](/docs/how-to-guides/integrations/microsoft/partner-center/#prefer-microsoft-graph-over-portal-steps). It can also grant application permissions by creating an `appRoleAssignment` for the client service principal. The caller still needs the documented Graph permissions and an appropriate Entra role. Before a mutation, an agent should use the installed CLI help and Graph discovery to identify the exact tenant, object, current grant, requested addition/removal, and verification probe, then obtain confirmation for that bounded plan. A CLI operator identity is not the Bifrost app-only runtime identity.
+
+## Connect Bifrost and Map Customers
+
+<Steps>
+
+1. Configure the global Bifrost integration named `Microsoft` for the client credentials flow. Its token URL must contain `{entity_id}` and its scope must be `https://graph.microsoft.com/.default`.
+
+2. Enter the application's client ID and credential. Do not configure a refresh token for this connection.
+
+3. For each customer, create exactly one integration mapping whose entity ID is the customer's Entra tenant ID and whose Bifrost scope is the customer's organization.
+
+4. If your workspace has the optional CSP Solution, use its install-owned customer-link proposal and compatibility review to identify the exact mapping. Its native setup workflow remains dry-run only; make a shared mapping/configuration change only through an approved Bifrost interface or CLI plan after verifying affected consumers.
+
+5. Reject unknown or duplicate tenant mappings before making customer-scoped calls.
+
+</Steps>
+
+## Establish Customer Consent
+
+The provider application needs a service principal and the approved application roles in each customer tenant. A workspace that includes the CSP Solution can prepare the provider-delegated provisioning plan when the relationship and roles allow it. Its native executor does not make the live change. An approved customer administrator or supported provider CLI/Graph path must perform it, after exact-target confirmation.
+
+Without the Solution, a customer Privileged Role Administrator or Global Administrator can open `https://login.microsoftonline.com/<customer-tenant-id>/adminconsent?client_id=<graph-app-client-id>`, then review the customer-tenant enterprise application's permissions in Entra and grant admin consent. Confirm the service principal and application-role assignments before running the mapped workflow. Microsoft documents [creating a customer-tenant enterprise app for a multitenant application](https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/create-service-principal-cross-tenant) and [granting tenant-wide admin consent](https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/grant-admin-consent).
+
+<Aside type="caution">
+Customer consent and GDAP are separate. A customer relationship does not automatically grant the application's Graph permissions, and an app-role assignment does not grant the provider user a GDAP role.
+</Aside>
+
+For a controlled rollout:
+
+1. Link the development tenant to its Bifrost organization.
+2. Choose a consent path: an authorized provider-delegated CLI/Graph path with active GDAP assignments and group membership, or a customer administrator's manual consent path.
+3. Apply the selected provider permissions and complete customer consent.
+4. Re-read the customer service principal and app-role assignments.
+5. Run a harmless read in the mapped organization.
+6. Run a write test only against an explicit disposable object and with approval.
+
+## Verify and Operate
+
+Verify that the global `Microsoft` connection reports healthy, every customer has one mapping, the development customer's grants match the selected profile, and an app-only token can call the intended Graph resource in customer scope. Record a workload-specific probe too: an app-role assignment alone does not prove Exchange RBAC, SharePoint site access, Defender authorization, or license eligibility.
+
+Monitor credential expiration, permission drift, failed token requests, and stale mappings. When offboarding, disable customer writes, remove the mapping, remove the service principal or grants only after checking other consumers, and retain the required audit evidence.

@@ -1,0 +1,112 @@
+---
+title: Develop and Deploy an Independent App
+description: Create, bind, run, migrate, and deploy a V2 App whose source lives in its own repository and whose backing resources stay live in Bifrost.
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Create the project
+
+```bash
+bifrost app create operations --name "Operations"
+cd operations
+npm install
+```
+
+Add `--org <ref>` for an organization-visible App or `--global` for a globally visible App. The command creates the remote App record and a normal Vite project. It writes the binding to a gitignored `.env`:
+
+```dotenv
+BIFROST_API_URL=https://bifrost.example.com
+BIFROST_APP_ID=<uuid>
+```
+
+There is no source YAML, Solution descriptor, `_repo` App directory, draft, preview, or publish step.
+
+## Develop against live resources
+
+```bash
+bifrost app start
+```
+
+Open the proxy URL printed by the command. Vite hot-reloads the frontend, while workflow, table, file, config, and integration calls go to the selected live Bifrost instance. Local Python workflows are not executed.
+
+Run `app start` before the first standalone `npm run build` in a clean checkout. Start installs the selected instance's SDK into `node_modules` transiently; it is intentionally absent from the portable `package.json` and git history. Server deploy installs the same instance-matched SDK in its isolated build directory.
+
+<Aside type="caution">
+Connected development is not a data sandbox. Table, managed-file, config, and integration writes affect the selected instance and organization.
+</Aside>
+
+The current viewer's selected organization is the default runtime scope. An authorized provider/admin can troubleshoot another organization without changing source or rebinding:
+
+```bash
+bifrost app start --org "Customer Org"
+```
+
+The override does not bypass App visibility, roles, workflow access, table policies, file policies, or external-user restrictions.
+
+## Use portable resource references
+
+Reference live workflows by `path::function` when possible:
+
+```tsx
+const tickets = useWorkflowQuery("workflows/tickets.py::list_open");
+const assign = useWorkflowMutation("workflows/tickets.py::assign");
+```
+
+Avoid environment-specific workflow UUIDs in source. Confirm every referenced workflow, table, and managed-file location exists and has compatible access in every organization where the App will run.
+
+## Deploy
+
+```bash
+bifrost app deploy
+```
+
+The CLI excludes `.env`, ignored files, `node_modules`, and `dist`. The server stages source for a durable Vite build, uploads an immutable compiled artifact, activates it atomically, and retains a sanitized source archive for future SDK-only rebuilds. Deploy changes only the App; it does not capture or mutate backing resources.
+
+Launch the App from the Apps page or open `/apps/<slug>`. Verify the deployed App against the same workflows, tables, files, and organizations used during local development.
+
+If a build fails, the previous deployment remains active. Fix the local project and run `bifrost app deploy` again.
+
+After upgrading Bifrost, use [Update Deployed App SDKs](/docs/how-to-guides/apps/updating-deployed-sdks/) to rebuild the active deployment against the SDK shipped by the new instance without redeploying the whole project.
+
+## Bind a clone
+
+After cloning the repository, authenticate to the target instance and recreate `.env`:
+
+```bash
+bifrost app bind <app-id-or-slug> . --url https://bifrost.example.com
+bifrost app start
+```
+
+Binding selects an existing independent App. It does not download source because the git repository is the source of truth.
+
+## Migrate a V1 App
+
+Pull the legacy `_repo/apps/<slug>` source into a local directory, then create a V2 project:
+
+```bash
+bifrost app migrate ./legacy-source ./operations-v2 \
+  --name "Operations" --slug operations-v2
+```
+
+The migration ports pages and components, rewrites V1 platform imports, installs detected UI/browser dependencies, and prints the route, access, theming, and browser-review work that still requires judgment. Backing resources stay live and are not captured.
+
+After the V2 App passes local and deployed acceptance, preserve the old URL with an atomic slug swap:
+
+```bash
+bifrost app deploy ./operations-v2
+bifrost app swap-slugs operations operations-v2
+```
+
+The V1 App remains parked under the temporary slug for rollback. Delete it only after the V2 App has been verified with realistic users and organizations.
+
+## Acceptance checklist
+
+- Build and test the project locally.
+- Open every route through `app start`; refresh at a deep route.
+- Verify loading, empty, denied, error, disabled, and success states.
+- Exercise live workflow, table, and file behavior in the default organization.
+- Exercise `--org` with an authorized operator and confirm an unauthorized viewer cannot override scope.
+- Deploy and repeat the checks from the Apps page.
+- Confirm a failed redeploy leaves the previous deployment available.
+- Confirm `.env` is ignored and no App source is stored in `_repo` or permanent upload storage.

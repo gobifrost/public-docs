@@ -1,0 +1,44 @@
+[
+  {
+    "id": "a1f0c2d4-0001-4b2a-9e10-111111111111",
+    "raw_key": null,
+    "masked_key": "9f4c",
+    "workflow_id": null,
+    "workflow_name": null,
+    "created_by": "admin@acme.example.com",
+    "created_at": "2026-05-02T14:21:00Z",
+    "last_used_at": "2026-06-15T09:12:00Z",
+    "revoked": false,
+    "expires_at": null,
+    "description": "CI pipeline trigger",
+    "disable_global_key": false
+  },
+  {
+    "id": "a1f0c2d4-0002-4b2a-9e10-222222222222",
+    "raw_key": null,
+    "masked_key": "3b7e",
+    "workflow_id": "c3e5a7b9-1010-4c33-8d20-aaaaaaaaaaaa",
+    "workflow_name": "onboard_employee",
+    "created_by": "admin@acme.example.com",
+    "created_at": "2026-05-20T17:05:00Z",
+    "last_used_at": "2026-06-14T22:48:00Z",
+    "revoked": false,
+    "expires_at": "2026-08-18T17:05:00Z",
+    "description": "Northwind HR webhook",
+    "disable_global_key": false
+  },
+  {
+    "id": "a1f0c2d4-0003-4b2a-9e10-333333333333",
+    "raw_key": null,
+    "masked_key": "d51a",
+    "workflow_id": "c3e5a7b9-2020-4c33-8d20-bbbbbbbbbbbb",
+    "workflow_name": "sync_invoices",
+    "created_by": "ops@acme.example.com",
+    "created_at": "2026-04-11T08:30:00Z",
+    "last_used_at": null,
+    "revoked": false,
+    "expires_at": "2026-07-10T08:30:00Z",
+    "description": "Globex billing nightly",
+    "disable_global_key": false
+  }
+]

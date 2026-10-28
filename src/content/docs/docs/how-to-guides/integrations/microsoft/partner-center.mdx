@@ -1,0 +1,114 @@
+---
+title: Connect Microsoft Partner Center
+description: Reuse or create a Secure Application Model registration and connect it to Bifrost as Microsoft CSP
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+This guide applies when a workspace uses the optional [Microsoft CSP Solution](https://github.com/gobifrost/microsoft-csp/tree/fix/csp-onboarding-and-app-shell) for Partner Center discovery and CSP setup planning. It is not a Bifrost built-in or a Teams prerequisite. When present, reuse the provider-owned app registration used for Microsoft's Secure Application Model as the `Microsoft CSP` partner-delegated connection. Do not create a second CSP application unless discovery shows the existing registration cannot be repaired or safely reused.
+
+The current native setup executors provide proposals and confirmed dry-runs; they do not execute Microsoft mutations. Use the Solution's [Microsoft setup prompt](https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/agent-prompts/microsoft-setup.md) to discover state, show the exact plan, and then use an approved CLI or Microsoft Graph operator path for a confirmed action. The versioned prompt is release-pending on this branch; select the copy bundled with the installed Solution release.
+
+## Start With Discovery
+
+Before changing anything, ask the operator whether Partner Center automation already exists and offer to inventory it read-only. Inspect:
+
+- The provider tenant and Partner Center account
+- Existing multi-tenant app registrations used for Partner Center
+- Their owners, redirect URIs, credentials, API permissions, and enterprise applications
+- Existing Bifrost `Microsoft CSP` definition, OAuth connection, and customer mappings
+- Existing Partner Center customers and any GDAP relationships
+- Existing Workspace registrations, tables, mappings, and consumers that the Solution's install-bound compatibility adapter would read
+- Workflows or services that share the registration or credential
+
+For every component, report one recommendation: `reuse`, `repair`, or `create`. Include evidence, the next write required, and whether a shared resource has an authoritative legacy writer. Never return secrets or tokens in the inventory. Do not bulk-import a community CSP app, its authentication state, or provider-specific mappings.
+
+## Requirements
+
+You need a CSP direct-bill partner or indirect provider account, a provider Entra tenant associated with Partner Center, a dedicated integration user with the required Partner Center role, MFA, a Bifrost platform administrator, and a development customer for acceptance testing. Partner Center APIs do not support indirect resellers.
+
+Review Microsoft's [Partner Center getting-started requirements](https://learn.microsoft.com/en-us/partner-center/developer/get-started), [partner security requirements](https://learn.microsoft.com/en-us/partner-center/security/partner-security-requirements-mandating-mfa), [Partner Center authentication guidance](https://learn.microsoft.com/en-us/partner-center/developer/partner-center-authentication), and [Secure Application Model](https://learn.microsoft.com/en-us/partner-center/developer/secure-app-model-framework).
+
+<Aside type="caution">
+Beginning April 1, 2026, Microsoft enforces MFA for Partner Center API calls that use app-and-user authentication. Use an MFA-compliant integration account and monitor refresh-token health.
+</Aside>
+
+## Register or Reuse the Application
+
+<Steps>
+
+1. Reuse a healthy provider-owned Partner Center application when discovery confirms the ownership, audience, redirect URI, permissions, and consumers. Otherwise, create a multi-tenant web application in the provider tenant.
+
+2. Record its application ID and object ID. Assign at least two accountable owners.
+
+3. Configure Bifrost's OAuth callback URI as a web redirect URI. Copy the URI displayed by the `Microsoft CSP` integration instead of guessing it from the Bifrost hostname.
+
+4. Configure the delegated permissions required by the Secure Application Model and the installed provider capabilities. Microsoft documents Partner Center API access plus Microsoft Entra access as the minimum Partner Center baseline. Add Graph scopes only when a named Bifrost capability needs them.
+
+5. Prefer a certificate where the complete authentication path supports one. If the Bifrost integration is configured for a client secret, create a short-lived credential with an owner and renewal plan; do not put it in source, a workflow, or a table.
+
+</Steps>
+
+Updating an application's requested permissions does not grant consent. Treat requested permissions, granted consent, and a successful API test as separate states.
+
+### Prefer Microsoft Graph Over Portal Steps
+
+An authorized setup agent can use Microsoft Graph for most registration work:
+
+| Task | Microsoft Graph operation |
+| --- | --- |
+| Discover matching registrations | `GET /applications` and `GET /servicePrincipals` with a filtered application ID or display name |
+| Create the app registration | `POST /applications` |
+| Create the provider enterprise application | `POST /servicePrincipals` |
+| Add accountable owners | `POST /applications/{id}/owners/$ref` |
+| Configure redirect URIs and requested API access | `PATCH /applications/{id}` |
+| Create a password credential when required | `POST /applications/{id}/addPassword` |
+| Read granted application roles | `GET /servicePrincipals/{id}/appRoleAssignments` |
+
+The agent must check for an existing application before creating one, store a newly returned credential immediately in the approved secret manager or integration, and never echo it. The interactive Secure Application Model consent and MFA step remains human-operated.
+
+Azure CLI and Microsoft Graph PowerShell are acceptable clients for the same Graph operations. A setup assistant should use whichever already has an authorized provider-tenant session, verify the active tenant and effective principal before every write, and fall back to the portal only for an interactive consent boundary or an operation Microsoft does not expose through the selected API. The CLI identity can set up the connection, but it is not the Bifrost runtime identity and does not prove that Bifrost can call Partner Center after setup.
+
+## Connect the Same Application to Bifrost
+
+<Steps>
+
+1. In Bifrost, open the `Microsoft CSP` integration. Its OAuth flow must use authorization code, request `offline_access`, and use the provider tenant's authorization and token endpoints.
+
+2. Enter the Partner Center application's client ID and approved credential. Confirm the OAuth callback exactly matches the app registration.
+
+3. Start the connection, sign in with the dedicated Partner Center integration user, complete MFA, and review consent.
+
+4. Let Bifrost store the refresh token in the integration. Do not copy it into configuration, workflow variables, or an external note.
+
+5. Reconcile the permission state for the resource and flow you are testing: the app registration's requested permissions, the tenant's consent grant, and a freshly issued access token for that resource. Partner Center, Graph, and Exchange access tokens have different audiences.
+
+6. If the required permission is absent from the tenant grant, have an authorized administrator grant consent. Do not request another consent or reconnection for a permission that is already granted and works in a fresh resource-specific test token. Reconnect `Microsoft CSP` only when its stored authorization must be renewed or its required consent has changed.
+
+7. Re-read the Bifrost connection and run a Partner Center customer-discovery probe. It should report the `Microsoft CSP` delegated connection independently from the `Microsoft` Graph app-only connection.
+
+8. Run customer discovery through the installed Solution's read surface or Bifrost CLI. Record the Partner Center result separately from shared Bifrost mappings until a reviewed mapping change is approved.
+
+</Steps>
+
+The Secure Application Model refresh token is multi-audience for resources included in its consent. Exchange it for a separate Partner Center, Microsoft Graph, or Exchange access token as needed; each access token is single-audience and must not be reused for another resource. The current portable runtime can reuse a valid token bound to the exact connection, tenant, and resource, but cannot safely perform targeted cross-tenant or cross-resource delegated renewal.
+
+## Verify the Connection
+
+A successful setup proves all of the following:
+
+- The Solution's read-only customer-discovery probe reports `Microsoft CSP` connected.
+- Partner Center customer discovery returns the expected development customer.
+- Every permission required by the installed workflows appears in the app's requested permissions, the tenant's grant, and a freshly issued token for the resource that workflow calls.
+- A GDAP installation proves `DelegatedAdminRelationship.Read.All` or `DelegatedAdminRelationship.ReadWrite.All` is present in the token before interpreting an empty relationship list as “no relationships.”
+- The authenticated provider tenant and Partner Center organization are correct.
+- No secret, authorization code, refresh token, or access token appears in workflow output or logs.
+- The application owners and credential renewal date are recorded.
+
+Continue with [Connect Microsoft Graph](/docs/how-to-guides/integrations/microsoft/microsoft-graph/) and [Set Up GDAP](/docs/how-to-guides/integrations/microsoft/csp-gdap/).
+
+## Repair and Rotate
+
+If discovery finds an existing app, preserve it when its grants and consumers are understood. Repair redirect URIs, owners, requested permissions, or credentials one change at a time, then reconnect and re-run discovery. Do not treat the Solution's dry-run as live credential rotation; use the approved integration path and verify with a fresh Partner Center probe.
+
+Rotate a credential by adding the replacement, updating and reconnecting `Microsoft CSP`, verifying customer discovery, and only then removing the old credential. Interactive reconnection may still be required when the refresh token is revoked, expires, loses its MFA claim, or no longer covers the requested audience.

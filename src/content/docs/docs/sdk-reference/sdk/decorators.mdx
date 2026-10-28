@@ -1,0 +1,379 @@
+---
+title: Decorators Reference
+description: Complete reference for @workflow, @tool, and @data_provider decorators
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+
+Decorators are the foundation of Bifrost's discovery system. They register workflows, tools, and data providers automatically when your modules are imported.
+
+## @workflow Decorator
+
+Registers an async function as a discoverable workflow. The decorator infers identity from your function and only accepts the lightweight metadata that belongs in source.
+
+### Minimal Usage
+
+```python
+from bifrost import workflow
+
+@workflow
+async def send_greeting(name: str, count: int = 1):
+    """Send a greeting message to the user."""
+    return {"message": f"Hello {name}!" * count}
+```
+
+This automatically:
+- Sets `name` to `"send_greeting"` (from function name)
+- Sets `description` to `"Send a greeting message to the user."` (from docstring)
+- Extracts parameters from the function signature
+
+### Syntax
+
+```python
+@workflow(
+    name: str | None = None,           # Auto-derived from function name
+    description: str | None = None,    # Auto-derived from docstring
+    category: str = "General",
+    tags: list[str] | None = None,
+    is_tool: bool = False,
+)
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | str | None | Workflow identifier. Auto-derived from function name if not provided |
+| `description` | str | None | User-facing description. Auto-derived from docstring if not provided |
+| `category` | str | "General" | Category for grouping (e.g., "User Management") |
+| `tags` | list | None | Tags for filtering and search |
+| `is_tool` | bool | False | Make callable by AI agents |
+
+<Aside type="note">
+Unknown keyword arguments are accepted for backwards compatibility, but they are warned about and ignored. Workflow execution settings such as timeouts, endpoints, schedules, retry policy, cache TTL, access level, ROI, and tool-specific UI text are configured on the workflow record via the Bifrost UI or API, not in the decorator.
+</Aside>
+
+### Examples
+
+<Tabs>
+  <TabItem label="Minimal" icon="star">
+```python
+@workflow
+async def create_user(email: str, name: str, department: str = "General"):
+    """Create a new user in the system."""
+    user = await create_in_db(email, name, department)
+    return {"user_id": user.id}
+```
+  </TabItem>
+
+  <TabItem label="With Options" icon="setting">
+```python
+@workflow(
+    category="User Management",
+    tags=["onboarding"]
+)
+async def create_user(email: str, name: str):
+    """Create a new user in the system."""
+    return {"success": True}
+```
+  </TabItem>
+
+  <TabItem label="AI Tool" icon="seti:ai">
+```python
+@workflow(
+    is_tool=True
+)
+async def lookup_customer(email: str):
+    """Look up a customer by email address and return their account details."""
+    customer = await get_customer(email)
+    return {"name": customer.name, "account": customer.id}
+```
+  </TabItem>
+</Tabs>
+
+<Aside type="tip">
+Features like schedules, HTTP endpoints, timeouts, cache TTL, and access levels are configured via the Bifrost UI or API after you register the workflow. See [Scheduled Workflows](/docs/how-to-guides/workflows/scheduled-workflows), [HTTP Endpoints](/docs/how-to-guides/workflows/http-endpoints), and [Event Sources](/docs/core-concepts/events) for details.
+</Aside>
+
+## @tool Decorator
+
+`@tool` is a first-class alias for `@workflow(is_tool=True)`. Use it when a function is intended primarily for AI agents -- it makes the intent obvious in source and accepts the same identity parameters as `@workflow` (minus `is_tool`, which is implicit).
+
+```python
+from bifrost import tool
+
+@tool
+async def lookup_customer(email: str):
+    """Look up a customer by email and return account details."""
+    return {"name": "...", "account": "..."}
+
+@tool(category="CRM", tags=["customer"])
+async def search_customers(query: str, limit: int = 10):
+    """Search customers by name or email."""
+    return []
+```
+
+### Syntax
+
+```python
+@tool(
+    name: str | None = None,
+    description: str | None = None,
+    category: str = "General",
+    tags: list[str] | None = None,
+)
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | str | None | Tool name (auto-derived from function name) |
+| `description` | str | None | LLM-facing description (auto-derived from docstring) |
+| `category` | str | "General" | Category for organization |
+| `tags` | list | None | Tags for filtering |
+
+`@tool` and `@workflow(is_tool=True)` produce identical metadata -- the function is stored in the workflows table with `type="tool"` and is callable by AI agents.
+
+## Parameter Inference
+
+**Parameters are automatically extracted from your function signature.** No `@param` decorators needed for basic use cases.
+
+### How It Works
+
+1. **Type hints determine field types:**
+   - `str` → `"string"`
+   - `int` → `"int"`
+   - `float` → `"float"`
+   - `bool` → `"bool"`
+   - `list` → `"list"`
+   - `dict` → `"json"`
+   - `str | None` → `"string"` (optional)
+
+2. **Default values determine optionality:**
+   - No default → required
+   - Has default → optional with that default
+   - `| None` union → optional
+
+3. **Labels auto-generated from names:**
+   - `user_name` → "User Name"
+   - `firstName` → "First Name"
+
+### Example
+
+```python
+@workflow
+async def onboard_user(
+    first_name: str,           # Required string, label: "First Name"
+    last_name: str,            # Required string, label: "Last Name"
+    email: str,                # Required string, label: "Email"
+    license: str = "E3",       # Optional string, default: "E3"
+    active: bool = True,       # Optional bool, default: True
+    tags: list | None = None   # Optional list
+):
+    """Onboard a new user."""
+    return {"success": True}
+```
+
+<Aside type="tip">
+Use `from bifrost import context` to access execution context - no parameter needed.
+</Aside>
+
+## @data_provider Decorator
+
+Registers a function that provides dynamic options for form fields.
+
+### Syntax
+
+```python
+@data_provider(
+    name: str | None = None,
+    description: str | None = None
+)
+```
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `name` | str | None | Unique provider identifier (auto-derived from function name if not provided) |
+| `description` | str | None | Description of what data it provides (auto-derived from docstring if not provided) |
+
+### Examples
+
+<Tabs>
+  <TabItem label="Basic" icon="seti:python">
+```python
+from bifrost import data_provider
+
+@data_provider(
+    name="get_departments",
+    description="List available departments"
+)
+async def get_departments():
+    """List available departments for selection."""
+    return [
+        {"label": "Engineering", "value": "eng"},
+        {"label": "Sales", "value": "sales"},
+        {"label": "Support", "value": "support"}
+    ]
+```
+  </TabItem>
+
+  <TabItem label="With Parameters" icon="setting">
+```python
+@data_provider(
+    name="get_users_by_department",
+    description="Get users in a specific department"
+)
+async def get_users_by_department(department: str):
+    users = await fetch_users(department)
+    return [
+        {"label": user["name"], "value": user["id"]}
+        for user in users
+    ]
+```
+  </TabItem>
+
+  <TabItem label="With Metadata" icon="list">
+```python
+@data_provider(name="get_licenses", description="Available licenses")
+async def get_licenses():
+    return [
+        {
+            "label": "Microsoft 365 E3",
+            "value": "SPE_E3",
+            "metadata": {"group": "Microsoft", "seats": 100}
+        },
+        {
+            "label": "Microsoft 365 E5",
+            "value": "SPE_E5",
+            "metadata": {"group": "Microsoft", "seats": 50}
+        }
+    ]
+```
+  </TabItem>
+</Tabs>
+
+### Caching
+
+Data provider results are cached in Redis to reduce API calls and speed up form loads. The cache key includes the organization, the provider name, and a hash of the input parameters, so different inputs produce different cache entries:
+
+```
+bifrost:org:{org_id}:dp:{provider_name}:{param_hash}
+```
+
+The cache TTL is configured on the workflow record via the UI/API, not the decorator. The default is 300 seconds (5 minutes); valid values are 0 to 86400 (24 hours). Update it via:
+
+- **UI:** Workflow detail page → Cache TTL field
+- **API:** `PATCH /api/workflows/{id}` with `cache_ttl_seconds: <int>`
+- **MCP:** the `update_workflow` tool with `cache_ttl_seconds`
+
+Setting `cache_ttl_seconds=0` disables caching for that provider. Stampede protection (Redis SETNX locks) ensures only one worker computes a given cache key at a time.
+
+<Aside type="caution">
+Passing `cache_ttl=` (or any other unknown keyword) directly to the `@data_provider` decorator is ignored with a warning. All execution configuration -- TTL, timeout, schedule, access level, and endpoint exposure -- is managed via the UI/API, not the decorator.
+</Aside>
+
+## Return Values
+
+<Tabs>
+  <TabItem label="Workflow" icon="seti:python">
+Workflows return any JSON-serializable value:
+
+```python
+@workflow
+async def example():
+    """Example workflow."""
+    return {
+        "success": True,
+        "message": "Operation completed",
+        "data": [1, 2, 3]
+    }
+```
+  </TabItem>
+
+  <TabItem label="Data Provider" icon="list">
+Data providers return a list of objects with `label` and `value`:
+
+```python
+@data_provider(name="example", description="Example provider")
+async def example():
+    return [
+        {"label": "Option 1", "value": "opt1"},
+        {"label": "Option 2", "value": "opt2"}
+    ]
+```
+  </TabItem>
+</Tabs>
+
+## Best Practices
+
+<Aside type="tip">
+Follow these guidelines for production-ready workflows:
+</Aside>
+
+**✅ DO:**
+- Use descriptive function names (they become the workflow name)
+- Write clear docstrings (they become the description)
+- Use type hints for all parameters
+- Set appropriate timeouts for long operations
+- Cache data provider results appropriately
+
+**❌ DON'T:**
+- Use generic names like "workflow1"
+- Forget docstrings (empty description in UI)
+- Ignore type hints (parameters won't be extracted)
+- Use sync mode for long-running tasks
+- Cache dynamic data too long
+
+## Complete Example
+
+```python
+from bifrost import workflow, data_provider, context
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Data provider for departments
+@data_provider(
+    name="get_departments",
+    description="Get available departments"
+)
+async def get_departments():
+    """Fetch departments from system."""
+    org_id = context.org_id  # Access context via proxy
+    return [
+        {"label": "Engineering", "value": "eng"},
+        {"label": "Sales", "value": "sales"},
+        {"label": "Support", "value": "support"}
+    ]
+
+# Workflow using inferred parameters
+@workflow(category="User Management", tags=["onboarding"])
+async def create_user(
+    email: str,
+    name: str,
+    department: str = "General",
+    send_welcome: bool = True
+):
+    """Create a new user in the system."""
+    logger.info(f"Creating user: {email}", extra={
+        "org_id": context.org_id,
+        "user_id": context.user_id
+    })
+
+    user_id = await create_user_in_system(email, name, department)
+
+    if send_welcome:
+        await send_welcome_email(email, name)
+
+    logger.info(f"User created: {user_id}")
+    return {"user_id": user_id, "email": email}
+```
+
+## See Also
+
+- [Workflow Development Guide](/docs/how-to-guides/workflows/writing-workflows/)
+- [Context API Reference](/docs/sdk-reference/sdk/context-api/)
+- [Discovery System](/docs/core-concepts/discovery-system/)

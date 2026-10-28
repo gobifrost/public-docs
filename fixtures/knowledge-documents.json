@@ -1,0 +1,74 @@
+[
+  {
+    "id": "a1c4f8e2-0001-4a10-9c01-aa0000000001",
+    "namespace": "support-playbooks",
+    "key": "password-reset-procedure",
+    "content_preview": "When a user reports they cannot sign in, first confirm the account is not locked. Verify identity using the registered phone or recovery email before issuing a temporary password and forcing a reset on next login.",
+    "metadata": { "category": "access", "reviewed": true },
+    "organization_id": null,
+    "created_at": "2026-05-22T13:40:00+00:00"
+  },
+  {
+    "id": "a1c4f8e2-0002-4a10-9c01-aa0000000002",
+    "namespace": "support-playbooks",
+    "key": "vpn-troubleshooting",
+    "content_preview": "If the VPN client fails to connect, check that the device clock is in sync, the certificate has not expired, and the user is not already connected from another session. Capture the client log before escalating.",
+    "metadata": { "category": "network", "reviewed": true },
+    "organization_id": null,
+    "created_at": "2026-05-24T09:15:00+00:00"
+  },
+  {
+    "id": "a1c4f8e2-0003-4a10-9c01-aa0000000003",
+    "namespace": "product-docs",
+    "key": "billing-plans-overview",
+    "content_preview": "The Starter plan includes up to five seats and standard support. The Growth plan adds usage analytics and priority queues. Enterprise adds SSO, audit export, and a dedicated success contact.",
+    "metadata": { "audience": "all" },
+    "organization_id": null,
+    "created_at": "2026-05-19T17:02:00+00:00"
+  },
+  {
+    "id": "a1c4f8e2-0004-4a10-9c01-aa0000000004",
+    "namespace": "onboarding-runbooks",
+    "key": "new-hire-day-one",
+    "content_preview": "Provision the corporate identity, assign the baseline role group, enroll the laptop in MDM, and schedule the security-awareness module. Confirm mailbox delegation requests with the hiring manager.",
+    "metadata": { "team": "it", "reviewed": false },
+    "organization_id": "11111111-1111-4111-8111-111111111111",
+    "created_at": "2026-06-01T08:30:00+00:00"
+  },
+  {
+    "id": "a1c4f8e2-0005-4a10-9c01-aa0000000005",
+    "namespace": "onboarding-runbooks",
+    "key": "contractor-offboarding",
+    "content_preview": "Disable the account at the end date, revoke all OAuth grants, reclaim assigned licenses, and archive the mailbox. Document the asset return in the ticket before closing.",
+    "metadata": { "team": "it", "reviewed": true },
+    "organization_id": "22222222-2222-4222-8222-222222222222",
+    "created_at": "2026-06-03T12:18:00+00:00"
+  },
+  {
+    "id": "a1c4f8e2-0006-4a10-9c01-aa0000000006",
+    "namespace": "security-policies",
+    "key": "acceptable-use",
+    "content_preview": "Company devices are for business use. Multi-factor authentication is required for all remote access. Report lost or stolen hardware to the help desk within one hour of discovery.",
+    "metadata": { "version": "3.1" },
+    "organization_id": null,
+    "created_at": "2026-04-28T10:55:00+00:00"
+  },
+  {
+    "id": "a1c4f8e2-0007-4a10-9c01-aa0000000007",
+    "namespace": "support-playbooks",
+    "key": "printer-offline",
+    "content_preview": "Confirm the printer has power and network connectivity, clear the local print spooler, and reinstall the driver from the managed software portal if the queue remains stuck after a restart.",
+    "metadata": { "category": "hardware", "reviewed": true },
+    "organization_id": "33333333-3333-4333-8333-333333333333",
+    "created_at": "2026-06-08T15:44:00+00:00"
+  },
+  {
+    "id": "a1c4f8e2-0008-4a10-9c01-aa0000000008",
+    "namespace": "product-docs",
+    "key": "api-rate-limits",
+    "content_preview": "The public API allows 600 requests per minute per token. Bursts above the limit return a 429 with a Retry-After header. Use exponential backoff and cache idempotent reads where possible.",
+    "metadata": { "audience": "developers" },
+    "organization_id": null,
+    "created_at": "2026-05-11T19:27:00+00:00"
+  }
+]

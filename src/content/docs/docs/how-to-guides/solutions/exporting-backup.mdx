@@ -1,0 +1,98 @@
+---
+title: Export or Back Up a Solution
+description: Produce a shareable distribution zip or a password-encrypted full backup of an installed Solution with bifrost solution export.
+---
+
+import { Steps, Aside } from "@astrojs/starlight/components";
+
+`bifrost solution export <ref>` downloads an installed Solution as a workspace zip. Two modes:
+
+- **`shareable`** (default) — code, app source, and schema (workflows, tables, forms, agents, config and connection declarations). No secret values, no table data, no password. Safe to commit or hand to someone else to install.
+- **`full`** — everything in `shareable` plus a Fernet-encrypted `.bifrost/secrets.enc` blob carrying the install's config values (and table data). `--password` is required; the password encrypts the blob.
+
+A `shareable` zip installs with `bifrost solution install <zip>`. A `full` backup restores with `bifrost solution install <zip> --password <password>`.
+
+## Export a shareable zip
+
+<Steps>
+
+1. Authenticate against the environment that holds the install:
+
+   ```bash
+   bifrost login --url <api-url> --email you@example.com
+   ```
+
+2. Export by slug or install UUID:
+
+   ```bash
+   bifrost solution export my-solution
+   ```
+
+   The zip lands as `<slug>-<version>.zip` in the current directory. Pass `--out ./bundle.zip` to choose the path.
+
+</Steps>
+
+![The installs catalog showing each install's slug and version](../../../../../assets/public-docs/core-concepts/solutions.png)
+
+## Export a full encrypted backup
+
+<Steps>
+
+1. Run the export with `--mode full` and a password:
+
+   ```bash
+   bifrost solution export my-solution --mode full --password '<password>' --out ./my-solution-backup.zip
+   ```
+
+2. Store the password separately — it is the only way to decrypt the secrets blob. The zip is useless on restore without it.
+
+</Steps>
+
+<Aside type="caution">
+The password rides in the request body, not the URL, but it still appears in your shell history when typed inline. Prefer reading it from an environment variable or a secrets manager.
+</Aside>
+
+## Restore a full backup
+
+<Steps>
+
+1. Authenticate against the **target** environment, then install the backup zip with its password:
+
+   ```bash
+   bifrost solution install ./my-solution-backup.zip --password '<password>'
+   ```
+
+   Omit `--org` to install into your own org, or pass `--org <id|name>` / `--global` to target a different scope.
+
+2. If the server reports a 409 collision (a config value or table row already exists in the target), re-run with the matching override:
+
+   ```bash
+   # overwrite conflicting config values
+   bifrost solution install ./my-solution-backup.zip --password '<password>' --replace-secrets
+
+   # overwrite conflicting table data
+   bifrost solution install ./my-solution-backup.zip --password '<password>' --replace-data
+   ```
+
+</Steps>
+
+![An install's detail view after a full-backup restore](../../../../../assets/public-docs/solutions/detail-overview.png)
+
+## Flags
+
+| Flag | Command | What it does |
+|------|---------|--------------|
+| `--mode shareable` | `export` | Code + schema only, no secrets, no password (default). |
+| `--mode full` | `export` | Adds the Fernet-encrypted secrets/data blob. Requires `--password`. |
+| `--password` | `export` | Encrypts the secrets blob. Required for `--mode full`. |
+| `--out <path>` | `export` | Output zip path (default `<slug>-<version>.zip`). |
+| `--password` | `install` | Decrypts a full-backup zip's secrets blob. A wrong password returns 422. |
+| `--replace-secrets` | `install` | Overwrite conflicting config values on a 409 collision. |
+| `--replace-data` | `install` | Overwrite conflicting table data on a 409 collision. |
+
+## Notes
+
+- **`<ref>` is a slug or a UUID.** Slugs resolve through the installs list; pass the UUID directly to skip the lookup.
+- **The export reflects current ownership.** It rebuilds from what the install owns right now, so an export always captures the live state, not a snapshot from deploy time.
+- **`shareable` carries no secrets.** Config values declared by the Solution are present as declarations only — operators supply values at install time via the Setup wizard or `--set KEY=VALUE`.
+- **Table data only travels in a `full` backup.** It is part of the encrypted blob, never in a `shareable` zip.

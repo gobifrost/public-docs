@@ -1,0 +1,35 @@
+[
+  {
+    "id": "a1010101-1111-4111-8111-111111111111",
+    "filename": "Quarterly Security Review.pdf",
+    "content_type": "application/pdf",
+    "size_bytes": 1843200,
+    "kind": "artifact",
+    "conversation_id": "c1a2b3c4-0000-4000-8000-000000000001",
+    "message_id": "b1010101-1111-4111-8111-111111111111",
+    "conversation_title": "Quarterly security review",
+    "created_at": "2026-09-02T15:42:00Z"
+  },
+  {
+    "id": "a2020202-2222-4222-8222-222222222222",
+    "filename": "License Reconciliation.xlsx",
+    "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "size_bytes": 286720,
+    "kind": "artifact",
+    "conversation_id": "c1a2b3c4-0000-4000-8000-000000000002",
+    "message_id": "b2020202-2222-4222-8222-222222222222",
+    "conversation_title": "Microsoft 365 license review",
+    "created_at": "2026-08-29T11:08:00Z"
+  },
+  {
+    "id": "a3030303-3333-4333-8333-333333333333",
+    "filename": "device-inventory.csv",
+    "content_type": "text/csv",
+    "size_bytes": 94208,
+    "kind": "attachment",
+    "conversation_id": "c1a2b3c4-0000-4000-8000-000000000003",
+    "message_id": "b3030303-3333-4333-8333-333333333333",
+    "conversation_title": "Device lifecycle planning",
+    "created_at": "2026-08-27T18:24:00Z"
+  }
+]

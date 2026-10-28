@@ -1,0 +1,17 @@
+# Default ownership for public documentation.
+* @jackmusick
+
+# Changes that affect repository policy, automation, or dependency resolution.
+/.github/ @jackmusick
+/scripts/ @jackmusick
+/package.json @jackmusick
+/package-lock.json @jackmusick
+
+# Documentation source and supporting implementation.
+/src/content/docs/docs/ @jackmusick
+/src/assets/public-docs/ @jackmusick
+/src/components/docs/ @jackmusick
+/config/starlight.mjs @jackmusick
+/astro.config.mjs @jackmusick
+/screenshots.yaml @jackmusick
+/fixtures/ @jackmusick

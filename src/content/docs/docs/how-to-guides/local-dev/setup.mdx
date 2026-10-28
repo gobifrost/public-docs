@@ -1,0 +1,262 @@
+---
+title: Local Development
+description: Develop workflows locally against a Bifrost instance
+---
+
+import { Aside, Steps, Card, CardGrid } from '@astrojs/starlight/components';
+
+Develop workflows locally using the Bifrost SDK and CLI. No Docker required - connect directly to your Bifrost instance.
+
+## Prerequisites
+
+- **Python 3.11+** installed
+- **pipx** recommended for CLI installation (or pip)
+- Access to a Bifrost instance (cloud or self-hosted)
+
+<Aside type="tip" title="Windows 11">
+This CLI-only workflow runs in native PowerShell. To **deploy** Bifrost on
+Windows, use `Initialize-Bifrost.ps1` (see
+[Installation](/docs/getting-started/installation#windows-11-deployment)). To
+**develop the platform** with `./debug.sh` / `./test.sh`, use Linux, macOS, or
+Git Bash / Ubuntu on WSL2 — those Bash scripts don't run in native PowerShell.
+</Aside>
+
+## Quick Start
+
+<Steps>
+
+1. **Install the Bifrost CLI**:
+
+    The SDK is served directly from your Bifrost instance:
+
+    ```bash
+    pipx install https://your-instance.gobifrost.com/api/cli/download/bifrost-cli.tar.gz
+    ```
+
+    Or with pip:
+
+    ```bash
+    pip install https://your-instance.gobifrost.com/api/cli/download/bifrost-cli.tar.gz
+    ```
+
+    Verify the installation:
+
+    ```bash
+    bifrost help
+    ```
+
+    After installation, update the CLI from the active Bifrost instance with:
+
+    ```bash
+    bifrost update
+    ```
+
+    Use `bifrost update --url https://your-instance.gobifrost.com` to target a specific saved connection. The update command remains available even when the installed CLI is too old for the server's current contract.
+
+    On native Windows PowerShell, prefer the Python launcher so the Microsoft
+    Store `python.exe` alias does not intercept setup:
+
+    ```powershell
+    py -3.11 --version
+    py -3.11 -m pip install --user pipx
+    py -3.11 -m pipx ensurepath
+    ```
+
+    Open a new PowerShell window, then install the API-matched CLI:
+
+    ```powershell
+    pipx install --force https://your-instance.gobifrost.com/api/cli/download/bifrost-cli.tar.gz
+    bifrost help
+    ```
+
+    The shorter `/api/cli/download` path still redirects for compatibility, but
+    the tarball URL above is the canonical install target for new docs and
+    scripts.
+
+2. **Authenticate**:
+
+    ```bash
+    bifrost login --url https://your-instance.gobifrost.com
+    ```
+
+    This opens your browser for authentication. Credentials refresh automatically.
+    On Windows, Bifrost uses Windows Credential Manager when available and falls
+    back to `%APPDATA%\Bifrost\credentials.json`. On Linux and macOS, it uses the
+    system keyring when available and falls back to `~/.bifrost/credentials.json`.
+
+3. **Start developing** - write workflows locally and test them against your instance
+
+</Steps>
+
+<Aside type="tip">
+Replace `https://your-instance.gobifrost.com` with your actual Bifrost URL. Every instance has a unique URL provided by your organization.
+</Aside>
+
+## Creating Workflows
+
+Create Python files locally and test them with the CLI:
+
+```python
+from bifrost import workflow, context
+
+@workflow
+async def hello_world(name: str):
+    """A simple example workflow."""
+    return {"message": f"Hello, {name}!", "org": context.org_id}
+```
+
+Test locally:
+
+```bash
+bifrost run hello_world.py -w hello_world -p '{"name": "Alice"}'
+```
+
+In native Windows PowerShell, escape the JSON quotes before passing them to a
+native executable:
+
+```powershell
+bifrost run hello_world.py -w hello_world -p '{\"name\":\"Alice\"}'
+```
+
+Sync to the platform:
+
+```bash
+bifrost push workflows
+```
+
+`bifrost push` takes a directory. To review entity changes (workflows, forms,
+agents, etc.) and file differences between local and remote, run
+`bifrost sync`. For each item, you can choose to push, pull, delete, or skip
+with smart defaults based on timestamps.
+
+`bifrost push` and `bifrost pull` are available as convenience aliases that default to their respective directions.
+
+### Registering workflows
+
+Pushing a `.py` file uploads it but does not make a `@workflow`, `@tool`, or `@data_provider` discoverable in the platform DB. Register the function explicitly so it can be referenced by forms, agents, and event subscriptions:
+
+```bash
+bifrost workflows register --path workflows/billing.py --function-name run
+```
+
+Pass `--org <ref>` to scope the workflow to a specific organization. To list orphaned entries (file moved or deleted), run `bifrost workflows list-orphaned`; to repoint one, use `bifrost workflows replace`.
+
+### Watch mode
+
+For continuous development, use watch mode:
+
+```bash
+bifrost watch
+```
+
+This watches the workspace and auto-pushes every saved file. Keep it running while you develop. The watch TUI shows structured log columns (time, action, path, user) with color coding.
+
+<Aside type="tip" title="--mirror">
+By default, `bifrost watch` (and `push`/`sync`) only push files you've changed locally. Adding `--mirror` makes the platform side match your local directory exactly — files present on the platform but missing locally are deleted. Use it when you've renamed or removed files and want the platform to reflect that, but understand it's destructive on the remote.
+
+```bash
+bifrost watch apps/my-app --mirror
+```
+</Aside>
+
+### Calling arbitrary API endpoints
+
+For anything the typed CLI commands don't yet wrap, `bifrost api` sends an authenticated request to any endpoint:
+
+```bash
+bifrost api GET /api/workflows
+bifrost api POST /api/applications/my-app/validate
+bifrost api POST /api/files/push @payload.json   # @file = read JSON body from file
+```
+
+## Using SDK Features Locally
+
+All SDK modules work in local development - they call the remote API using your saved credentials:
+
+```python
+from bifrost import ai, knowledge, config
+
+# AI completions
+response = await ai.complete("Summarize this ticket")
+
+# Knowledge store
+await knowledge.store("Policy content...", namespace="policies")
+results = await knowledge.search("refund policy", namespace="policies")
+
+# Configuration
+api_key = await config.get("external_api_key")
+```
+
+## IDE Setup
+
+### VS Code
+
+Install the Python extension and configure your interpreter to the environment with the Bifrost SDK installed. The SDK provides full type hints.
+
+## Managing Credentials
+
+```bash
+bifrost login --url https://your-instance.gobifrost.com  # Authenticate
+bifrost logout                                            # Clear credentials
+```
+
+Tokens refresh automatically when expired. If refresh fails (e.g., password changed), run `bifrost login` again.
+
+On Windows, stale native credentials can be cleared from Credential Manager. If
+the file fallback was used instead, remove `%APPDATA%\Bifrost\credentials.json`.
+
+## Self-Hosted Development
+
+For contributors developing the platform itself, use Docker Compose:
+
+<Aside type="caution" title="Windows contributors">
+These `./setup.sh` / `./debug.sh` commands are Bash scripts. Run them on Linux
+or macOS, or on Windows through Git Bash or Ubuntu on WSL2 (Docker Desktop with
+the WSL2 backend) — they do not run in native PowerShell. If you only want to
+**run** Bifrost on Windows rather than develop it, use
+[`Initialize-Bifrost.ps1`](/docs/getting-started/installation#windows-11-deployment)
+instead.
+</Aside>
+
+<Steps>
+
+1. **Clone the repository**:
+
+    ```bash
+    git clone https://github.com/gobifrost/bifrost.git
+    cd bifrost
+    ```
+
+2. **Run setup and start with hot reload**:
+
+    ```bash
+    ./setup.sh
+    ./debug.sh
+    ```
+
+3. **Access at** `http://localhost:3000`
+
+</Steps>
+
+| Service | Dev Behavior |
+|---------|--------------|
+| **api** | Hot reload with uvicorn, debugpy on port 5678 |
+| **worker** | Auto-restart on code changes |
+| **client** | Vite dev server with HMR |
+
+## Next Steps
+
+<CardGrid>
+  <Card title="CLI Cheatsheet" icon="terminal">
+    [Every `bifrost` command in one page](/docs/sdk-reference/cli/)
+  </Card>
+  <Card title="Writing Workflows" icon="rocket">
+    [Learn workflow development](/docs/how-to-guides/workflows/writing-workflows/)
+  </Card>
+  <Card title="AI-Assisted Development" icon="seti:ai">
+    [Use AI tools to build workflows](/docs/how-to-guides/local-dev/ai-coding)
+  </Card>
+  <Card title="SDK Reference" icon="document">
+    [Explore the SDK](/docs/sdk-reference/sdk/bifrost-module)
+  </Card>
+</CardGrid>

@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "message": "Connection successful. 5 models available.",
+  "models": [
+    { "id": "claude-sonnet-4-20250514", "display_name": "Claude Sonnet 4" },
+    { "id": "claude-opus-4-20250514", "display_name": "Claude Opus 4" },
+    { "id": "claude-haiku-3-5-20241022", "display_name": "Claude Haiku 3.5" },
+    { "id": "claude-3-7-sonnet-20250219", "display_name": "Claude Sonnet 3.7" },
+    { "id": "claude-3-5-sonnet-20241022", "display_name": "Claude Sonnet 3.5" }
+  ]
+}

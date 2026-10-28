@@ -1,0 +1,27 @@
+---
+title: Common Setups
+description: Reusable, discovery-first runbooks for connecting Bifrost to common provider systems
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+Common Setups are end-to-end runbooks for systems that span Bifrost, a provider account, and customer environments. Each setup begins with read-only discovery so you can reuse what is healthy, repair what is incomplete, and create only what is missing.
+
+<CardGrid>
+  <Card title="Microsoft for MSPs" icon="seti:azure">
+    Map customer tenants for Graph and a shared Teams bot. Add optional CSP workspace automation for Partner Center and GDAP.
+
+    [Start with the Microsoft architecture →](/docs/how-to-guides/integrations/microsoft/architecture/)
+  </Card>
+</CardGrid>
+
+## How Common Setups Work
+
+1. Choose the capabilities you want, not a copied permission list.
+2. Authorize a read-only inventory of the provider, Bifrost, and a development customer.
+3. Review a `reuse`, `repair`, or `create` recommendation for every component.
+4. Approve writes in small phases, with a verification check after each phase.
+5. Complete the few human-only steps such as MFA, tenant-wide consent, and customer approval.
+6. Keep the resulting IDs, mappings, grants, and acceptance results as the operating record.
+
+The runbooks prefer supported APIs and Bifrost workflows over portal screenshots. Microsoft portals remain necessary where Microsoft does not expose an equivalent application-only API.

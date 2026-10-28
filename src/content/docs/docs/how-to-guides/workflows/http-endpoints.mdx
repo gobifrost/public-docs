@@ -1,0 +1,128 @@
+---
+title: HTTP Endpoints
+description: Expose workflows as HTTP endpoints for webhooks and APIs
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Expose workflows as HTTP endpoints for webhooks, integrations, and external API access. Endpoint exposure and methods live on the workflow record, while authentication uses workflow keys; none of these are decorator arguments.
+
+## Basic Endpoint
+
+```python
+from bifrost import workflow
+
+@workflow
+async def handle_webhook(payload: dict):
+    """Handle incoming webhook."""
+    return {"status": "processed"}
+```
+
+## Endpoint Settings
+
+Configure these on the workflow record after registration:
+
+- Enable HTTP endpoint exposure
+- Choose the allowed methods
+- Create a workflow-specific or global workflow key
+
+## URL Pattern
+
+Endpoints are available at:
+```
+POST/GET/etc. /api/endpoints/{workflow_id}
+```
+
+## Authentication
+
+Every workflow endpoint requires a workflow key in the `X-Bifrost-Key` header:
+
+```python
+@workflow
+async def secure_endpoint(data: dict):
+    """Requires authentication."""
+    return {"processed": True}
+```
+
+Call with API key:
+```bash
+curl -X POST https://your-instance.com/api/endpoints/WORKFLOW_UUID \
+  -H "X-Bifrost-Key: ${BIFROST_WORKFLOW_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '{"data": "value"}'
+```
+
+## HTTP Methods
+
+Accept specific HTTP methods:
+
+```python
+@workflow
+async def flexible_endpoint(query: str = None, payload: dict = None):
+    """Accept GET or POST."""
+    return {"query": query, "payload": payload}
+```
+
+## Request Data
+
+JSON object fields and query-string values are merged and passed as workflow arguments:
+
+```python
+@workflow
+async def process_request(
+    customer_id: str,
+    action: str = "preview",
+):
+    """Access request data."""
+    return {"customer_id": customer_id, "action": action}
+```
+
+For example, `?action=run` combined with `{"customer_id": "123"}` calls the workflow with both arguments. JSON fields override query-string values with the same name.
+
+## Response Formats
+
+Return JSON responses:
+
+```python
+@workflow
+async def json_response():
+    return {
+        "status": "success",
+        "data": {"id": 123}
+    }
+```
+
+The endpoint returns an execution response containing the workflow result. Workflow return values do not directly set the endpoint's HTTP status code.
+
+## Execution Mode
+
+Endpoint invocations use the runtime configured on the workflow record. For user-facing APIs and webhooks, keep the endpoint responsive and move longer work behind a separate workflow or event source when needed.
+
+## Example: Slack Webhook
+
+```python
+from bifrost import workflow
+import logging
+
+logger = logging.getLogger(__name__)
+
+@workflow
+async def slack_command(payload: dict):
+    """Handle Slack slash command."""
+    command = payload.get("command")
+    text = payload.get("text")
+    user = payload.get("user_name")
+
+    logger.info(f"Slack command: {command} from {user}")
+
+    # Slack expects immediate response
+    return {
+        "response_type": "in_channel",
+        "text": f"Processing: {text}"
+    }
+```
+
+## See Also
+
+- [Decorators Reference](/docs/sdk-reference/sdk/decorators) - All decorator options
+- [Writing Workflows](/docs/how-to-guides/workflows/writing-workflows) - Workflow basics

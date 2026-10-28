@@ -1,0 +1,525 @@
+---
+title: Code-Based Apps
+description: Build applications with TypeScript/TSX files
+---
+
+import { Aside, Code, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Overview
+
+Bifrost applications are React + Tailwind applications that run inside the Bifrost platform. Apps are built with TypeScript/TSX files organized into pages, layouts, and components.
+
+Everything your app needs is available via a single import:
+
+```tsx
+import { Button, Card, useState, useWorkflowQuery } from "bifrost";
+```
+
+External npm packages (declared in `app.yaml`) use standard imports:
+
+```tsx
+import dayjs from "dayjs";
+import { LineChart, Line } from "recharts";
+```
+
+<Aside type="danger" title="Critical Rules">
+1. **USE WORKFLOW IDs** - Always use UUIDs from the Workflows page or `bifrost workflows list`, not names
+2. **USE `<Outlet />`** - Layouts must use `<Outlet />` for routing, not `{children}`
+</Aside>
+
+## File Structure
+
+```
+app.yaml              # Metadata (name, description, dependencies)
+_layout.tsx           # Root layout wrapper (required)
+_providers.tsx        # Optional context providers
+styles.css            # Custom CSS (dark mode via .dark selector)
+pages/
+  index.tsx           # Home page (/)
+  about.tsx           # About page (/about)
+  clients/
+    index.tsx         # Clients list (/clients)
+    [id].tsx          # Client detail (/clients/:id)
+components/
+  MyComponent.tsx     # Shared components
+modules/
+  utils.ts            # Utility modules
+```
+
+### File Path Conventions
+
+- **Root files**: `_layout.tsx` (required), `_providers.tsx` (optional), `styles.css` (optional), `app.yaml`
+- **Pages**: `pages/*.tsx` - automatically become routes
+- **Components**: `components/*.tsx` - reusable UI
+- **Modules**: `modules/*.ts` - utilities and helpers
+- **Dynamic routes**: `[param].tsx` syntax (e.g., `[id].tsx`)
+
+---
+
+## Imports
+
+Everything comes from a single `"bifrost"` import -- React hooks, UI components, Bifrost hooks, icons, and utilities:
+
+```tsx
+import {
+  useState, useEffect, useMemo, useCallback, useRef, useContext,
+  Button, Card, CardHeader, CardTitle, CardContent,
+  useWorkflowQuery, useUser, RequireRole, useNavigate,
+  Settings, ChevronRight,
+  cn, toast, format
+} from "bifrost";
+```
+
+---
+
+## Workflow Hooks
+
+The primary way to interact with backend workflows.
+
+<Aside type="danger" title="Use Workflow IDs, Not Names">
+Always use the workflow UUID from the Workflows page or `bifrost workflows list`. Names do not work.
+</Aside>
+
+### useWorkflowQuery(workflowId, params?, options?)
+
+Auto-executes on mount. Use for loading data.
+
+```tsx
+// Load data on mount
+const { data, isLoading } = useWorkflowQuery("workflow-uuid", { limit: 10 });
+
+// Conditional loading -- only runs when id is truthy
+const { data } = useWorkflowQuery("workflow-uuid", { id }, { enabled: !!id });
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `data` | `T \| null` | Result data |
+| `isLoading` | `boolean` | True while executing |
+| `isError` | `boolean` | True if failed |
+| `error` | `string \| null` | Error message |
+| `refetch` | `() => Promise<T>` | Re-execute |
+| `logs` | `StreamingLog[]` | Real-time logs |
+
+Options: `{ enabled?: boolean }` -- set `false` to defer execution.
+
+### useWorkflowMutation(workflowId)
+
+Manual execution via `execute()`. Use for user-triggered actions.
+
+```tsx
+const { execute, isLoading } = useWorkflowMutation("workflow-uuid");
+const result = await execute({ name: "New Item" });
+```
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `execute` | `(params?) => Promise<T>` | Run workflow |
+| `isLoading` | `boolean` | True while executing |
+| `data` | `T \| null` | Last result |
+| `error` | `string \| null` | Error message |
+| `reset` | `() => void` | Reset state |
+
+---
+
+## Other Hooks
+
+| Hook | Description |
+|------|-------------|
+| `useUser()` | Current authenticated user (see below) |
+| `useAppState(key, initialValue)` | Persistent cross-page state |
+| `useParams()` | URL path parameters |
+| `useSearchParams()` | Query string parameters |
+| `useNavigate()` | Programmatic navigation: `navigate("/path")` |
+| `useLocation()` | Current location object |
+
+### useUser()
+
+Returns the current authenticated user. Use the user's roles to gate UI by role.
+
+```ts
+type User = {
+  id: string;
+  email: string;
+  name: string;
+  roles: string[];                          // All roles assigned to the user
+  hasRole: (role: string) => boolean;       // Convenience role check
+  organizationId: string;                   // "" for platform users
+};
+```
+
+```tsx
+import { useUser, Button } from "bifrost";
+
+export default function Header() {
+  const user = useUser();
+
+  return (
+    <div>
+      <span>Welcome, {user.name}</span>
+      {user.hasRole("Admin") && <Button>Admin Settings</Button>}
+    </div>
+  );
+}
+```
+
+### RequireRole
+
+Declarative wrapper that conditionally renders children based on the user's roles. Falls back to `null` (or a custom `fallback`) when the user lacks the role.
+
+```tsx
+import { RequireRole, Button } from "bifrost";
+
+<RequireRole role="Admin">
+  <Button variant="destructive">Delete All</Button>
+</RequireRole>
+
+<RequireRole role="Admin" fallback={<p>Admins only.</p>}>
+  <AdminPanel />
+</RequireRole>
+```
+
+`RequireRole` is built on top of `useUser().hasRole(role)` -- use it when you want a clean declarative gate around a subtree, and use `useUser()` directly when you need the role check inline with other logic.
+
+### React Hooks
+
+Standard React hooks are available from the `"bifrost"` import:
+
+`useState`, `useEffect`, `useMemo`, `useCallback`, `useRef`, `useContext`
+
+### Routing
+
+- `Outlet` - Renders child routes in layouts
+- `Link` - Navigation links
+
+---
+
+## Pre-included Components
+
+These are available from `"bifrost"` without installation. They are standard shadcn/ui components -- use them exactly as documented in the shadcn/ui docs.
+
+**Layout:** Card, CardHeader, CardFooter, CardTitle, CardAction, CardDescription, CardContent
+
+**Forms:** Button, Input, Label, Textarea, Checkbox, Switch, Select (+ SelectTrigger, SelectContent, SelectItem, SelectGroup, SelectLabel, SelectValue, SelectSeparator), RadioGroup, RadioGroupItem, Combobox, MultiCombobox, TagsInput
+
+**Display:** Badge, Avatar (+ AvatarImage, AvatarFallback), Alert (+ AlertTitle, AlertDescription), Skeleton, Progress
+
+**Navigation:** Tabs (+ TabsList, TabsTrigger, TabsContent), Pagination (+ PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious)
+
+**Feedback:** Dialog (+ DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger), AlertDialog (+ sub-components), Tooltip (+ TooltipContent, TooltipProvider, TooltipTrigger), Popover (+ PopoverContent, PopoverTrigger, PopoverAnchor)
+
+**Data:** Table (+ TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption)
+
+**Date:** CalendarPicker, DateRangePicker
+
+**Icons:** All lucide-react icons (e.g., `Settings`, `ChevronRight`, `Search`, `Plus`, `Trash2`, `Users`, `Mail`)
+
+**Utilities:** `cn(...)` (Tailwind class merging), `toast(message)` (Sonner notifications), `format(date, pattern)` (date-fns)
+
+### Custom Components
+
+Need a component not listed above? Build it in `components/`. shadcn/ui components are just TSX files -- recreate any shadcn component, customize it, or build entirely new ones from scratch with React and Tailwind.
+
+For example, to add a Sheet component, create `components/Sheet.tsx` using Radix primitives and Tailwind -- the same pattern shadcn/ui uses. Or build a rich text editor, a kanban board, a color picker -- anything you can build in React.
+
+## Runtime updates
+
+Published apps listen for deployment updates while they are open. When a newer build becomes available, Bifrost replaces the app with an **Application updated** screen and reloads the latest assets. A per-tab loop guard prevents repeated reloads if a deployment is incomplete; users do not need to refresh manually.
+
+---
+
+## Custom CSS
+
+Add a `styles.css` file to your app root for custom styles:
+
+```css
+/* CSS variables for theming */
+:root {
+  --app-primary: oklch(0.5 0.18 260);
+  --app-surface: #fffef9;
+}
+
+/* Dark mode -- inherits from platform toggle */
+.dark {
+  --app-primary: oklch(0.7 0.15 260);
+  --app-surface: #1e1e22;
+}
+
+/* Custom classes */
+.paper-bg {
+  background-color: var(--app-surface);
+  background-image: repeating-linear-gradient(
+    transparent, transparent 1.7rem,
+    rgba(0,0,0,0.06) 1.7rem, rgba(0,0,0,0.06) 1.75rem
+  );
+}
+```
+
+Use in components: `<div className="paper-bg rounded-lg">`. Tailwind classes and custom CSS classes can be mixed freely.
+
+---
+
+## External Dependencies
+
+Declare npm packages in `app.yaml`:
+
+```yaml
+name: My Dashboard
+description: Analytics dashboard
+dependencies:
+  recharts: "2.12"
+  dayjs: "1.11"
+```
+
+Max 20 packages. Loaded at runtime from esm.sh CDN.
+
+---
+
+## Runtime Environment
+
+Apps run inside the Bifrost shell (not in an iframe). Browser globals (`window`, `document`, `fetch`, `ResizeObserver`, `MutationObserver`, etc.) are accessible -- use them directly when needed. External npm packages that depend on DOM APIs (rich text editors, drag-and-drop libraries, charting with DOM measurement) work normally.
+
+**Cannot use:**
+- ES dynamic `import()` -- all dependencies must be declared in `app.yaml`
+- Node.js APIs (`fs`, `path`, `process`, etc.)
+
+Use `useWorkflowQuery`/`useWorkflowMutation` for calling backend workflows. Use `fetch` directly for external HTTP calls that don't need backend logic.
+
+---
+
+## Layout Pattern
+
+The root `_layout.tsx` is required and must use `<Outlet />` for routing.
+
+<Aside type="danger" title="Do NOT Use Children Props">
+The `{children}` pattern doesn't work with Bifrost routing. Always use `<Outlet />`.
+</Aside>
+
+Your app renders in a fixed-height container. The platform does not scroll the page for you -- if a page needs scrolling, add `overflow-auto` to the element that should scroll.
+
+```tsx
+import { Outlet } from "bifrost";
+
+// _layout.tsx - CORRECT
+export default function RootLayout() {
+  return (
+    <div className="h-full bg-background overflow-hidden">
+      <Outlet />
+    </div>
+  );
+}
+```
+
+### With Navigation
+
+```tsx
+import {
+  useLocation, useNavigate, cn,
+  LayoutDashboard, Building2, Outlet
+} from "bifrost";
+
+const navItems = [
+  { path: "/", label: "Dashboard", icon: LayoutDashboard },
+  { path: "/customers", label: "Customers", icon: Building2 },
+];
+
+export default function Layout() {
+  const location = useLocation();
+  const nav = useNavigate();
+
+  return (
+    <div className="flex h-full bg-background overflow-hidden">
+      <aside className="w-64 border-r bg-card flex flex-col shrink-0">
+        <nav className="flex-1 p-2">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.path;
+
+            return (
+              <button
+                key={item.path}
+                onClick={() => nav(item.path)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm",
+                  isActive ? "bg-primary text-primary-foreground" : "hover:bg-muted"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+
+      <main className="flex-1 min-w-0 min-h-0 flex flex-col p-6 overflow-hidden">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+```
+
+---
+
+## Complete Example
+
+A full page with workflow integration, loading states, and actions.
+
+```tsx
+// pages/index.tsx
+import {
+  useState, useEffect,
+  useWorkflowQuery, useWorkflowMutation,
+  Card, CardHeader, CardTitle, CardContent,
+  Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
+  Button, Badge, Skeleton,
+  Building2, Loader2, RefreshCw, X,
+  cn
+} from "bifrost";
+
+interface Customer {
+  id: string;
+  name: string;
+  email: string;
+  status: "active" | "inactive";
+}
+
+export default function CustomersPage() {
+  const { data, isLoading, refetch } = useWorkflowQuery("ef8cf1f2-b451-47f4-aee8-336f7cb21d33");
+  const deleteMutation = useWorkflowMutation("abc12345-delete-workflow-id");
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const customers: Customer[] = data?.customers || [];
+
+  const handleDelete = async (id: string) => {
+    setDeleting(id);
+    try {
+      await deleteMutation.execute({ customer_id: id });
+      refetch();
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  if (isLoading && customers.length === 0) {
+    return (
+      <div className="p-6">
+        <Skeleton className="h-9 w-48 mb-4" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full p-6 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6 shrink-0">
+        <div>
+          <h1 className="text-3xl font-bold">Customers</h1>
+          <p className="text-muted-foreground">Manage your customer list</p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => refetch()}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4 mr-2" />
+          )}
+          Refresh
+        </Button>
+      </div>
+
+      {/* Table */}
+      <Card className="flex flex-col min-h-0 flex-1">
+        <CardHeader className="shrink-0">
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5" />
+            Customer List
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 min-h-0 overflow-auto">
+          {customers.length === 0 ? (
+            <div className="flex flex-col items-center py-12">
+              <Building2 className="w-12 h-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No customers found</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {customers.map((customer) => (
+                  <TableRow key={customer.id}>
+                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell>{customer.email}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={customer.status === "active" ? "default" : "secondary"}
+                      >
+                        {customer.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(customer.id)}
+                        disabled={deleting === customer.id}
+                      >
+                        {deleting === customer.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <X className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+```
+
+---
+
+## Building Apps via MCP
+
+Connect to the root `/mcp` endpoint and use the agent gateway:
+
+1. Call `bifrost_find_agents` with the app you want to build.
+2. Load an app-building agent with `bifrost_get_agent` and follow its live instructions.
+3. Before each operation, inspect the selected tool with `bifrost_get_tool_schema`.
+4. Run the operation with `bifrost_execute_tool`, keeping the same agent id and tool reference.
+5. Preview and test the draft before asking the agent to publish it. Publish only when the user explicitly requests it.
+
+### Workflow
+
+```
+1. bifrost_find_agents(task="Build a customer dashboard app")
+2. bifrost_get_agent(agent_id=...)
+3. bifrost_get_tool_schema(agent_id=..., tool_ref=...)
+4. bifrost_execute_tool(agent_id=..., tool_ref=..., arguments={...})
+5. Repeat schema → execute for source edits and validation
+6. Preview, then publish only when requested
+```
+
+<Aside type="tip" title="Draft Mode">
+Apps are in draft mode until published. Users can preview and test before going live.
+</Aside>
+
+Publishing queues a durable platform job. The UI reports completion through the notification center; `bifrost apps publish <ref>` polls the same job until the build succeeds or fails. You can leave the editor while a larger build is running without cancelling it.

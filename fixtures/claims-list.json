@@ -1,0 +1,65 @@
+{
+  "claims": [
+    {
+      "id": "c1a1a1a1-0000-4000-8000-000000000001",
+      "organization_id": null,
+      "solution_id": null,
+      "name": "managed_site_ids",
+      "description": "Site IDs the caller is allowed to act on, drawn from the global site roster.",
+      "type": "list",
+      "query": {
+        "table": "site_roster",
+        "select": "site_id"
+      },
+      "is_solution_managed": false
+    },
+    {
+      "id": "c1a1a1a1-0000-4000-8000-000000000002",
+      "organization_id": "aaaa0000-0000-0000-0000-0000000000aa",
+      "solution_id": null,
+      "name": "assigned_client_ids",
+      "description": "Client records assigned to the current technician for this org.",
+      "type": "list",
+      "query": {
+        "table": "client_assignments",
+        "where": {
+          "eq": [{ "row": "technician_email" }, { "user": "email" }]
+        },
+        "select": "client_id"
+      },
+      "is_solution_managed": false
+    },
+    {
+      "id": "c1a1a1a1-0000-4000-8000-000000000003",
+      "organization_id": "aaaa0000-0000-0000-0000-0000000000aa",
+      "solution_id": null,
+      "name": "department_code",
+      "description": "The caller's department code, used to gate departmental tables.",
+      "type": "scalar",
+      "query": {
+        "table": "staff_directory",
+        "where": {
+          "eq": [{ "row": "email" }, { "user": "email" }]
+        },
+        "select": "department"
+      },
+      "is_solution_managed": false
+    },
+    {
+      "id": "c1a1a1a1-0000-4000-8000-000000000004",
+      "organization_id": "bbbb0000-0000-0000-0000-0000000000bb",
+      "solution_id": "5o1u7100-0000-4000-8000-00000000000a",
+      "name": "billing_account_ids",
+      "description": "Billing accounts visible to the caller, installed by the Billing Portal solution.",
+      "type": "list",
+      "query": {
+        "table": "billing_accounts",
+        "where": {
+          "eq": [{ "row": "owner_email" }, { "user": "email" }]
+        },
+        "select": "account_id"
+      },
+      "is_solution_managed": true
+    }
+  ]
+}

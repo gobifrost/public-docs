@@ -1,0 +1,201 @@
+---
+title: "Scopes: Global vs Organization"
+description: "Understanding scope in Bifrost: what makes data global vs organization-specific"
+---
+
+import { Steps, Aside } from "@astrojs/starlight/components";
+
+Scope determines whether a resource is shared across the entire platform (global) or belongs to a specific organization.
+
+Configs marked `secret` are encrypted at rest but follow the same scope cascade as any other config — see [Storing Sensitive Config Values](/docs/how-to-guides/integrations/secrets-management/) for usage details.
+
+## Understanding Scope
+
+Resources in Bifrost exist at two levels:
+
+-   **Global** (`organization_id = None`) - Available to all organizations on the platform
+-   **Organization** (`organization_id = UUID`) - Specific to one organization, isolated from others
+
+<Aside type="tip">
+    Most resources you work with will be globally scoped so you can maximize
+    reusability. Scope things to organizations that are truly specific to that
+    organization, like automations or forms you're developing specifically for
+    them.
+</Aside>
+
+### OAuth Connections
+
+Each organization can have its own OAuth connections with its own credentials:
+
+```python
+# Your organization's Microsoft Graph connection
+# Uses YOUR Entra ID app credentials
+# Not visible to other organizations
+integration = await integrations.get("microsoft-graph")
+if integration and integration.oauth:
+    access_token = integration.oauth.access_token
+```
+
+### Configuration
+
+Organization-specific settings:
+
+```python
+# Your organization's configuration
+timezone = await config.get("timezone")  # e.g., "America/Denver"
+department = await config.get("default_department")
+```
+
+### When Global Scope is Used
+
+1. **Shared platform services** - Services managed centrally by the platform
+2. **Default configurations** - Fallback settings when organization doesn't have its own
+3. **Platform-wide integrations** - Connections managed by platform admins
+
+## How Scope Works in Your Workflows
+
+When you access resources in a workflow, Bifrost automatically uses your organization's context:
+
+```python
+from bifrost import workflow, integrations, config
+
+@workflow(name="example")
+async def example():
+    # Uses YOUR organization's OAuth connection
+    integration = await integrations.get("microsoft-graph")
+    if integration and integration.oauth:
+        access_token = integration.oauth.access_token
+
+    # Gets YOUR organization's config
+    timezone = await config.get("timezone")
+```
+
+<Steps>
+
+1. **Your workflow executes** in the caller's context
+
+2. **All resources are automatically scoped** to their organization
+
+3. **Data is isolated** - your workflow ultimately decides what to do based on this information
+
+</Steps>
+
+### Scope Resolution (Cascade)
+
+When the SDK resolves a resource (config, table, integration mapping, etc.), it walks the cascade in this order:
+
+```text
+        SDK call (e.g. config.get("smtp_server"))
+                          │
+                          ▼
+       ┌──────────────────────────────────┐
+       │ 1. Org lookup                    │
+       │    Does my org have this name?   │
+       └──────────────────────────────────┘
+                          │
+              ┌───────────┴───────────┐
+            yes                      no
+              │                       │
+              ▼                       ▼
+       use org-scoped       ┌──────────────────────────┐
+            value           │ 2. Global lookup         │
+                            │    Does a global exist?  │
+                            └──────────────────────────┘
+                                       │
+                           ┌───────────┴───────────┐
+                         yes                      no
+                           │                       │
+                           ▼                       ▼
+                    use global value      3. None / default
+```
+
+In short:
+
+1. **Organization-level** — Your organization's specific resource
+2. **Global-level** — Platform-wide fallback (if exists)
+3. **Not found** — Returns `None` or default value
+
+If your org has a resource with the same name as a global one, **your org's version takes precedence** and the global one is shadowed. Other orgs still see the global version.
+
+This cascade applies identically for both **reads and writes**. If your org doesn't have a table called "Users" but a global one exists, reading from and writing to "Users" both target the global table. If your org has its own "Users" table, all operations target the org-scoped one instead.
+
+**Example:**
+
+```python
+# Looking for config value "smtp_server"
+smtp = await config.get("smtp_server")
+
+# 1. Check: Does my org have "smtp_server"? -> Yes, use it
+# 2. (If not found) Check: Is there a global "smtp_server"? -> Use it as fallback
+# 3. (If still not found) Return None or default value
+```
+
+This cascade applies uniformly to workflows, forms, agents, apps, tables, integration mappings, knowledge entries, and data providers.
+
+## The `scope` Parameter
+
+Most SDK methods accept an optional `scope` parameter. In practice, **you rarely need it** — the cascade handles everything automatically.
+
+### Default behavior (omit `scope`)
+
+```python
+# These all use your execution context's org, with global fallback
+data = await tables.query("customers")
+cfg = await config.get("api_key")
+integration = await integrations.get("HaloPSA")
+```
+
+### Scope overrides
+
+The `scope` parameter accepts an **org UUID** or **`None`**:
+
+| Value | Meaning |
+|-------|---------|
+| *(omitted)* | Use execution context org + global cascade (default) |
+| `None` | Target global scope directly (no org) |
+| `"org-uuid"` | Target a specific org (provider orgs only) |
+
+<Aside type="caution">
+**There is no `scope="global"` string.** Global scope is represented by `None`. Passing `scope="global"` will raise a `PermissionError`.
+</Aside>
+
+```python
+# Target global scope directly (bypasses cascade)
+await tables.create("shared_lookups", scope=None)
+
+# Target a specific org (provider orgs only)
+await config.get("timezone", scope="org-uuid-here")
+```
+
+## Cross-Organization Access (Provider Orgs)
+
+Provider organizations can access other organizations' scoped resources using `context.set_scope()`. This is useful for admin workflows that manage multiple tenants.
+
+```python
+from bifrost import workflow, context, integrations
+
+@workflow(name="sync_all_tenants")
+async def sync_all_tenants():
+    mappings = await integrations.list_mappings("Microsoft Graph")
+    for mapping in mappings:
+        # Switch to the managed org's scope
+        context.set_scope(mapping.organization_id)
+
+        # All SDK calls now target that org
+        graph = await integrations.get("Microsoft Graph")
+        # ... sync data for this org
+
+    # Reset to original scope
+    context.set_scope(None)
+```
+
+<Aside type="caution">
+Managed (non-provider) organizations are locked to their own scope and cannot use `set_scope()` to target other orgs. This prevents tenants from accessing each other's data.
+</Aside>
+
+## TL;DR
+
+-   Put resources like configs, forms and OAUTH connections in global or a specific organization
+-   The Bifrost SDK will automatically pull organization-specific things like configs first and fallback on global — for both reads and writes
+-   You almost never need the `scope` parameter — cascade handles it. When you do need it, use `None` for global or an org UUID for a specific org
+-   It's on you as the workflow developer to decide HOW to use context in the workflow, but the SDK will scope resources appropriately for you if you put them in the right place

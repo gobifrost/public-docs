@@ -1,0 +1,14 @@
+{
+  "form_id": "a3333333-0000-0000-0000-000000000001",
+  "status": "published",
+  "public_key": "bfr_solution_public_key",
+  "allowed_origins": [
+    "https://portal.example.com"
+  ],
+  "spam_protection_enabled": true,
+  "approved_fingerprint": "sha256:solution-reviewed",
+  "current_fingerprint": "sha256:solution-reviewed",
+  "iframe_path": "/embed/forms/public/bfr_solution_public_key",
+  "warnings": [],
+  "blockers": []
+}

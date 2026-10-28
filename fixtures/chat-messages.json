@@ -1,0 +1,102 @@
+[
+  {
+    "id": "m0000000-0000-4000-8000-000000000001",
+    "conversation_id": "c1a2b3c4-0000-4000-8000-000000000001",
+    "role": "user",
+    "content": "Jordan at Acme is locked out and can't get past MFA. Can you reset their MFA so they can re-enroll?",
+    "attachments": [
+      {
+        "id": "a1111111-1111-4111-8111-111111111111",
+        "filename": "incident-notes.pdf",
+        "content_type": "application/pdf",
+        "size_bytes": 48231
+      }
+    ],
+    "tool_calls": null,
+    "tool_call_id": null,
+    "tool_name": null,
+    "execution_id": null,
+    "tool_state": null,
+    "tool_result": null,
+    "tool_input": null,
+    "token_count_input": null,
+    "token_count_output": null,
+    "model": null,
+    "duration_ms": null,
+    "sequence": 1,
+    "created_at": "2026-06-14T15:39:02.000Z"
+  },
+  {
+    "id": "m0000000-0000-4000-8000-000000000002",
+    "conversation_id": "c1a2b3c4-0000-4000-8000-000000000001",
+    "role": "assistant",
+    "content": "I'll look up Jordan's account and reset their MFA methods so they can re-enroll on next sign-in.",
+    "tool_calls": [
+      {
+        "id": "toolu_01reset",
+        "name": "reset_user_mfa",
+        "arguments": {
+          "user_principal_name": "jordan@acme.com",
+          "tenant": "Acme Corp"
+        }
+      }
+    ],
+    "tool_call_id": null,
+    "tool_name": null,
+    "execution_id": null,
+    "tool_state": null,
+    "tool_result": null,
+    "tool_input": null,
+    "token_count_input": 1840,
+    "token_count_output": 96,
+    "model": "gpt-5.4",
+    "duration_ms": 2310,
+    "sequence": 2,
+    "created_at": "2026-06-14T15:41:05.000Z"
+  },
+  {
+    "id": "m0000000-0000-4000-8000-000000000003",
+    "conversation_id": "c1a2b3c4-0000-4000-8000-000000000001",
+    "role": "tool",
+    "content": "{\"status\": \"success\", \"methods_removed\": [\"Microsoft Authenticator\", \"SMS\"], \"reenroll_required\": true}",
+    "tool_calls": null,
+    "tool_call_id": "toolu_01reset",
+    "tool_name": "reset_user_mfa",
+    "execution_id": "e0000000-0000-4000-8000-0000000000e1",
+    "tool_state": "completed",
+    "tool_result": {
+      "status": "success",
+      "methods_removed": ["Microsoft Authenticator", "SMS"],
+      "reenroll_required": true
+    },
+    "tool_input": {
+      "user_principal_name": "jordan@acme.com",
+      "tenant": "Acme Corp"
+    },
+    "token_count_input": null,
+    "token_count_output": null,
+    "model": null,
+    "duration_ms": 1870,
+    "sequence": 3,
+    "created_at": "2026-06-14T15:41:08.000Z"
+  },
+  {
+    "id": "m0000000-0000-4000-8000-000000000004",
+    "conversation_id": "c1a2b3c4-0000-4000-8000-000000000001",
+    "role": "assistant",
+    "content": "Done. MFA has been reset for **jordan@acme.com** in the Acme Corp tenant.\n\n- Removed methods: Microsoft Authenticator, SMS\n- Re-enrollment will be required at next sign-in\n\nHave Jordan sign in at the normal portal; they'll be walked through setting up a new authenticator. Want me to send them the re-enrollment instructions by email?",
+    "tool_calls": null,
+    "tool_call_id": null,
+    "tool_name": null,
+    "execution_id": null,
+    "tool_state": null,
+    "tool_result": null,
+    "tool_input": null,
+    "token_count_input": 2015,
+    "token_count_output": 142,
+    "model": "gpt-5.4",
+    "duration_ms": 3120,
+    "sequence": 4,
+    "created_at": "2026-06-14T15:42:11.000Z"
+  }
+]

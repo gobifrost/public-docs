@@ -1,0 +1,3 @@
+{
+  "instructions": "## Operating boundaries\n\n- Explain the planned action before changing customer systems.\n- Ask for confirmation before destructive or externally visible actions.\n- Include the customer and affected resource in completion summaries."
+}

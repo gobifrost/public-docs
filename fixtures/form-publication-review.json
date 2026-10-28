@@ -1,0 +1,12 @@
+{
+  "fingerprint": "sha256:reviewed",
+  "blockers": [],
+  "warnings": [],
+  "submission_workflow": {
+    "ref": "onboarding.py::provision_employee",
+    "name": "provision_employee"
+  },
+  "startup_workflow": null,
+  "provider_fields": [],
+  "file_fields": []
+}

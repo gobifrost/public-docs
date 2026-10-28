@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Generated site output and installed dependencies are not published source."
+paths = ['''(^|/)dist/''', '''(^|/)node_modules/''', '''(^|/)\.astro/''']

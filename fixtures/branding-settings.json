@@ -1,0 +1,11 @@
+{
+  "application_name": "Acme Automation Hub",
+  "square_logo_url": null,
+  "rectangle_logo_url": null,
+  "primary_color": "#0066CC",
+  "terminology": {
+    "app": { "singular": "App", "plural": "Apps" },
+    "agent": { "singular": "Agent", "plural": "Agents" },
+    "form": { "singular": "Form", "plural": "Forms" }
+  }
+}

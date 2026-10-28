@@ -1,0 +1,67 @@
+---
+title: OAuth Troubleshooting
+description: Common OAuth connection issues
+---
+
+## Connection Not Working
+
+### Check 1: OAuth Connection Configured
+
+Verify the OAuth connection exists:
+
+-   Go to **Settings** → **OAuth Connections**
+-   Check that the connection shows as "Connected"
+
+### Check 2: Token Expired
+
+Bifrost automatically refreshes tokens, but if a token is rejected before its stated expiry (common with providers like Pax8), you can refresh it programmatically:
+
+```python
+integration = await integrations.get("Pax8")
+await integration.oauth.refresh()  # fetch fresh token
+```
+
+If the refresh token itself has expired:
+
+1. Delete the existing OAuth connection
+2. Re-authorize to get a fresh token
+
+### Check 3: Scopes Correct
+
+Ensure the OAuth app has the required scopes/permissions for your API calls.
+
+## Using OAuth in Workflows
+
+```python
+from bifrost import workflow, oauth
+import aiohttp
+
+@workflow
+async def call_graph_api():
+    """Example Microsoft Graph API call."""
+    conn = await oauth.get("microsoft")
+    if not conn:
+        return {"error": "Microsoft OAuth not configured"}
+
+    headers = {"Authorization": f"Bearer {conn['access_token']}"}
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(
+            "https://graph.microsoft.com/v1.0/me",
+            headers=headers
+        ) as resp:
+            return await resp.json()
+```
+
+## Common Errors
+
+| Error                   | Cause                         | Fix                                          |
+| ----------------------- | ----------------------------- | -------------------------------------------- |
+| "OAuth not configured"  | Connection doesn't exist      | Add OAuth connection in Settings             |
+| 401 Unauthorized        | Token expired or wrong scopes | Call `oauth.refresh()`, or re-authorize      |
+| "refresh_token invalid" | Refresh token revoked         | Delete and re-authorize                      |
+
+## See Also
+
+-   [OAuth Integration Guide](/docs/getting-started/integrations)
+-   [Microsoft Graph Guide](/docs/how-to-guides/integrations/microsoft-graph)

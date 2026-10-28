@@ -1,0 +1,225 @@
+---
+title: Use Decorators
+description: Advanced decorator patterns and best practices
+---
+
+import { Steps, Aside, Tabs, TabItem } from '@astrojs/starlight/components';
+
+## Overview
+
+Bifrost uses decorators to define workflows:
+
+- **@workflow** - Registers an executable workflow with identity metadata only
+- **@param** - Adds advanced parameter features (only when needed)
+- **@data_provider** - Provides dynamic options for dropdowns
+
+## Minimal Workflow
+
+The simplest workflow needs just a decorator and docstring:
+
+```python
+from bifrost import workflow
+
+@workflow
+async def send_email(recipient: str, subject: str, body: str = ""):
+    """Send an email message."""
+    await email_service.send(recipient, subject, body)
+    return {"sent": True}
+```
+
+This automatically:
+- Sets name to `"send_email"` (from function name)
+- Sets description to `"Send an email message."` (from docstring)
+- Extracts parameters with types and defaults from signature
+
+## @workflow Runtime Settings
+
+Schedules, HTTP endpoints, retry policies, cache TTL, and access levels are configured via the Bifrost UI or API after you register your workflow — not in the decorator. See:
+
+- [Scheduled Workflows](/docs/how-to-guides/workflows/scheduled-workflows) for recurring schedule sources
+- [HTTP Endpoints](/docs/how-to-guides/workflows/http-endpoints) for exposing workflows as REST endpoints
+- [Events](/docs/core-concepts/events) for event-source routing
+
+## Parameter Inference
+
+Parameters are automatically extracted from your function signature:
+
+```python
+@workflow
+async def create_user(
+    email: str,                # Required string
+    name: str,                 # Required string
+    department: str = "IT",    # Optional with default
+    active: bool = True,       # Optional boolean
+    tags: list | None = None   # Optional list
+):
+    """Create a new user."""
+    pass
+```
+
+**Type mapping:**
+- `str` → string input
+- `int` → integer input
+- `float` → decimal input
+- `bool` → checkbox
+- `dict` → JSON editor
+- `list` → array input
+
+**Labels** are auto-generated from parameter names:
+- `first_name` → "First Name"
+- `userEmail` → "User Email"
+
+## @param for Advanced Features
+
+Use `@param` only when you need features beyond type inference:
+
+### Data Provider Dropdowns
+
+```python
+@data_provider(name="get_departments", description="List departments")
+async def get_departments():
+    return [
+        {"label": "Engineering", "value": "eng"},
+        {"label": "Sales", "value": "sales"}
+    ]
+
+@workflow
+@param("department", data_provider="get_departments")
+async def assign_user(email: str, department: str):
+    """Assign user to department."""
+    pass
+```
+
+### Cascading Dropdowns
+
+```python
+@data_provider(name="get_users_by_dept", description="Users by department")
+async def get_users_by_dept(department: str):
+    users = await fetch_users(department)
+    return [{"label": u.name, "value": u.id} for u in users]
+
+@workflow
+@param("department", data_provider="get_departments")
+@param("user", data_provider="get_users_by_dept")
+async def assign_task(department: str, user: str, task: str):
+    """Assign task to user. User dropdown updates based on department."""
+    pass
+```
+
+### Validation Rules
+
+```python
+@workflow
+@param("password", validation={
+    "min_length": 12,
+    "max_length": 128,
+    "pattern": r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$"
+}, help_text="Min 12 chars with uppercase, lowercase, number, and special char")
+async def set_password(user_id: str, password: str):
+    """Set user password with validation."""
+    pass
+```
+
+### Custom Field Types
+
+```python
+@workflow
+@param("message", type="textarea")
+@param("contact", type="email")
+async def send_message(contact: str, message: str):
+    """Send a message."""
+    pass
+```
+
+## @data_provider Patterns
+
+### Caching
+
+Data provider results are cached automatically by the platform. Cache TTL is configured via the Bifrost UI or API, not in the decorator.
+
+```python
+@data_provider(
+    name="get_departments",
+    description="List departments"
+)
+async def get_departments():
+    # Results are cached automatically by the platform
+    return await fetch_departments()
+```
+
+### Options with Metadata
+
+```python
+@data_provider(name="get_licenses", description="Available licenses")
+async def get_licenses():
+    return [
+        {
+            "label": "Microsoft 365 E3",
+            "value": "SPE_E3",
+            "metadata": {
+                "group": "Microsoft",
+                "available": 50
+            }
+        },
+        {
+            "label": "Microsoft 365 E5",
+            "value": "SPE_E5",
+            "metadata": {
+                "group": "Microsoft",
+                "available": 10
+            }
+        }
+    ]
+```
+
+## Best Practices
+
+- **Use Descriptive Function Names**: `create_user_in_m365` not `proc1`
+- **Write Clear Docstrings**: They become the workflow description
+- **Use Type Hints**: Required for parameter extraction
+- **Set Appropriate Timeouts**: Match expected execution time in the workflow settings
+- **Cache Wisely**: Balance freshness vs. performance
+- **Use @param Sparingly**: Only for data providers, validation, or help text
+
+## Common Pitfalls
+
+### Missing Docstring
+
+❌ **Wrong**
+```python
+@workflow
+async def example():
+    pass  # No description in UI!
+```
+
+✅ **Correct**
+```python
+@workflow
+async def example():
+    """Process example data."""
+    pass
+```
+
+### Missing Type Hints
+
+❌ **Wrong**
+```python
+@workflow
+async def example(name, count):  # Parameters won't be extracted!
+    """Example workflow."""
+    pass
+```
+
+✅ **Correct**
+```python
+@workflow
+async def example(name: str, count: int = 1):
+    """Example workflow."""
+    pass
+```
+
+## Next Steps
+
+- [Error Handling](/docs/how-to-guides/workflows/error-handling) - Handle errors gracefully
+- [Writing Workflows](/docs/how-to-guides/workflows/writing-workflows) - Complete workflow guide
+- [SDK Reference](/docs/sdk-reference/sdk/decorators) - Full decorator documentation

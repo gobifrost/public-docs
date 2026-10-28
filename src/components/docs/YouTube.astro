@@ -1,0 +1,36 @@
+---
+// Click-to-play YouTube embed for docs pages. Nothing loads from YouTube
+// until the reader presses play.
+interface Props { id: string; title: string; }
+const { id, title } = Astro.props;
+---
+<div class="yt not-content" data-yt={id} data-title={title}>
+  <button type="button" class="yt-play" aria-label={`Play video: ${title}`}>
+    <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="" loading="lazy" />
+    <span class="yt-btn" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5.5v13l11-6.5z" /></svg>
+    </span>
+  </button>
+</div>
+
+<style>
+  .yt { position: relative; aspect-ratio: 16 / 9; border-radius: 0.75rem; overflow: hidden; border: 1px solid var(--sl-color-hairline); background: var(--sl-color-black); margin-block: 1.25rem; }
+  .yt-play { position: absolute; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+  .yt-play img { width: 100%; height: 100%; object-fit: cover; opacity: 0.9; margin: 0; }
+  .yt-btn { position: absolute; inset: 0; margin: auto; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--sl-color-white); background: rgb(8 9 11 / 0.8); border: 1px solid rgb(255 255 255 / 0.2); }
+  .yt-play:hover .yt-btn, .yt-play:focus-visible .yt-btn { background: var(--sl-color-accent); color: var(--sl-color-black); }
+  .yt :global(iframe) { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLElement>("[data-yt]").forEach((el) => {
+    el.querySelector("button")?.addEventListener("click", () => {
+      const f = document.createElement("iframe");
+      f.src = `https://www.youtube-nocookie.com/embed/${el.dataset.yt}?autoplay=1&rel=0`;
+      f.title = el.dataset.title ?? "Video";
+      f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+      f.allowFullscreen = true;
+      el.replaceChildren(f);
+    });
+  });
+</script>

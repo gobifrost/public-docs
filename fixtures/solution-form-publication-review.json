@@ -1,0 +1,12 @@
+{
+  "fingerprint": "sha256:solution-reviewed",
+  "blockers": [],
+  "warnings": [],
+  "submission_workflow": {
+    "ref": "workflows/onboarding.py::provision_new_client",
+    "name": "provision_new_client"
+  },
+  "startup_workflow": null,
+  "provider_fields": [],
+  "file_fields": []
+}

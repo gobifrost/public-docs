@@ -1,0 +1,11 @@
+{
+  "provider": "anthropic",
+  "model": "claude-sonnet-4-20250514",
+  "endpoint": null,
+  "max_tokens": 16384,
+  "default_system_prompt": "You are a helpful MSP automation assistant.",
+  "summarization_model": null,
+  "tuning_model": null,
+  "is_configured": true,
+  "api_key_set": true
+}

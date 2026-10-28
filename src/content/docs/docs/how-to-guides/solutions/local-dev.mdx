@@ -1,0 +1,121 @@
+---
+title: Run a Solution Locally
+description: Develop a Solution's app and workflows on one local origin with bifrost solution start — hot reload, no deploy.
+---
+
+import { Steps, Aside } from "@astrojs/starlight/components";
+
+`bifrost solution start` runs your Solution's app dev server and its local workflows behind a single origin, proxying everything else to your dev instance. It deploys nothing — edit, save, refresh. The local data plane comes from the Solution install bound in your workspace `.env`.
+
+## Prerequisites
+
+- A Solution workspace (a directory containing `bifrost.solution.yaml`) bound to a remote Solution install. Create and bind one with `bifrost solution create`; bind an existing install with `bifrost solution bind --solution <id-or-unique-slug>`.
+- At least one `standalone_v2` app in the workspace. Scaffold one with `bifrost solution scaffold-app <slug>`.
+- You are logged in (`bifrost login`) and Node.js (`npm`) is on your PATH.
+
+## Create or bind the workspace
+
+For a new Solution, create the descriptor and the empty remote install in one step:
+
+```bash
+bifrost solution create . --slug client-onboarding --name "Client Onboarding" --org "Contoso"
+```
+
+`bifrost solution init` is a compatibility alias for the same create-and-bind flow. Both commands write `bifrost.solution.yaml`, create the install, and bind the workspace in `.env`.
+
+If you cloned a workspace that already has a descriptor, bind it to an existing install instead:
+
+```bash
+bifrost solution bind . --solution client-onboarding
+```
+
+`bind` accepts an install id or a unique slug. It never creates a new install.
+
+<Aside type="note">
+The `.env` binding is local state, not portable source. It records the bound install id, slug, scope, and org id so `start` and `deploy` stamp local data-plane calls to the intended Solution instead of falling back to global `_repo` behavior.
+</Aside>
+
+## Start the dev server
+
+<Steps>
+
+1. From the solution root or any directory beneath it, run:
+
+    ```bash
+    bifrost solution start
+    ```
+
+    With more than one app in the workspace, name the one to serve:
+
+    ```bash
+    bifrost solution start my-app
+    ```
+
+2. On first run, the CLI points the scaffolded `bifrost` SDK dependency at the bound instance, installs the app's npm dependencies, discovers your local workflow functions, and starts Vite. Watch for:
+
+    ```
+    Discovered 1 local function(s).
+    Bifrost solution dev server → http://localhost:3000
+    ```
+
+3. Open `http://localhost:3000`. The app loads already authenticated as your CLI user, with its "Run workflow" button wired to your local functions.
+
+</Steps>
+
+`solution start` checks the app's vendored SDK contract against the connected instance. If it reports that the SDK is stale, refresh and reinstall the SDK in the app:
+
+```bash
+bifrost solution sdk update
+```
+
+For a Solution with multiple apps, select one with `--app <slug>`. Workflow hooks in the refreshed SDK stream progress and results from both local and deployed workflows.
+
+## One origin, two processes
+
+`start` runs a proxy on `--port` (default `3000`) and Vite on `--port + 1` (so `3000` → Vite `3001`). You only ever open the proxy port. Behind it:
+
+- **App requests** are served by Vite (HMR).
+- **Workflow calls** using a manifest name, `path::function`, or manifest UUID resolve against your local source first — no deploy needed.
+- **Everything else** (auth, tables, configs, integrations) is proxied to your dev instance with the bound Solution id and org context.
+
+Local import errors and ambiguous workflow names are returned to the app and printed in the terminal. They never silently fall through to a deployed copy. An unresolved ref is proxied only when the Solution descriptor enables `global_repo_access`.
+
+<Aside type="note">
+Vite binds `--port + 1` with `--strictPort`. If either port is in use, free it or pick a different base port with `--port`.
+</Aside>
+
+## Change the port
+
+```bash
+bifrost solution start my-app --port 4000
+```
+
+The dev origin is then `http://localhost:4000` (Vite runs on `4001`).
+
+## Bind beyond localhost
+
+Bind the proxy to another interface while keeping the browser-visible origin aligned with the SDK:
+
+```bash
+bifrost solution start my-app --host 0.0.0.0 --public-url http://localhost:4000 --port 4000
+```
+
+Use `--host` for the listening interface and `--public-url` for the URL opened by the browser or an external development proxy. A mismatched public URL can cause CORS or authentication failures.
+
+## Hot reload
+
+- **App code** (`.tsx`, `.css`, …) reloads instantly via Vite HMR.
+- **Workflow code** (the `.py` functions under your solution root) is re-discovered on save by the file watcher — the next workflow call runs the updated source. No restart.
+- **Workflow manifests** (`.bifrost/workflows.yaml`) are watched too, so renamed refs resolve without restarting.
+
+## Recover an expired session
+
+The proxy refreshes expired CLI credentials and coordinates simultaneous refreshes from browser and local workflow requests. If the refresh token has also expired, the app shows **Session expired**. Run `bifrost login` in the workspace, then reload the app.
+
+## Change org or global scope
+
+`start` uses the install recorded in `.env`; it does not take `--org` or `--global`. To run against another org or a global install, create or bind that install first, then restart the dev server.
+
+## Stop
+
+Press `Ctrl-C`. The CLI tears down both the proxy and the Vite process group.

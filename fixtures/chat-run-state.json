@@ -1,0 +1,67 @@
+{
+  "conversation": {
+    "id": "c1a2b3c4-0000-4000-8000-000000000001",
+    "agent_id": "a0000000-0000-4000-8000-0000000000a1",
+    "user_id": "u0000000-0000-4000-8000-0000000000f1",
+    "channel": "chat",
+    "title": "Reset MFA for a locked-out user",
+    "is_active": true,
+    "created_at": "2026-06-14T15:39:02.000Z",
+    "updated_at": "2026-06-14T15:42:11.000Z",
+    "message_count": 2,
+    "last_message_at": "2026-06-14T15:42:11.000Z",
+    "agent_name": "Triage Assistant"
+  },
+  "active_run": null,
+  "messages": [
+    {
+      "id": "m0000000-0000-4000-8000-000000000001",
+      "conversation_id": "c1a2b3c4-0000-4000-8000-000000000001",
+      "role": "user",
+      "content": "Jordan at Acme is locked out and can't get past MFA. Can you reset their MFA so they can re-enroll?",
+      "attachments": [
+        {
+          "id": "a1111111-1111-4111-8111-111111111111",
+          "filename": "incident-notes.pdf",
+          "content_type": "application/pdf",
+          "size_bytes": 48231
+        }
+      ],
+      "tool_calls": null,
+      "tool_call_id": null,
+      "tool_name": null,
+      "execution_id": null,
+      "tool_state": null,
+      "tool_result": null,
+      "tool_input": null,
+      "token_count_input": null,
+      "token_count_output": null,
+      "model": null,
+      "duration_ms": null,
+      "sequence": 1,
+      "created_at": "2026-06-14T15:39:02.000Z"
+    },
+    {
+      "id": "m0000000-0000-4000-8000-000000000004",
+      "conversation_id": "c1a2b3c4-0000-4000-8000-000000000001",
+      "role": "assistant",
+      "content": "Done. MFA has been reset for **jordan@acme.com** in the Acme Corp tenant. Re-enrollment will be required at next sign-in.",
+      "attachments": [],
+      "tool_calls": null,
+      "tool_call_id": null,
+      "tool_name": null,
+      "execution_id": null,
+      "tool_state": null,
+      "tool_result": null,
+      "tool_input": null,
+      "token_count_input": 2015,
+      "token_count_output": 142,
+      "model": "gpt-5.4",
+      "duration_ms": 3120,
+      "sequence": 2,
+      "created_at": "2026-06-14T15:42:11.000Z"
+    }
+  ],
+  "events": [],
+  "latest_sequence": 0
+}

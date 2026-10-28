@@ -1,0 +1,41 @@
+---
+title: Create an Event Source
+description: Add a webhook endpoint or scheduled trigger that workflows can subscribe to
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+An **event source** is a typed entry point for inbound triggers. Webhooks, schedules, and platform-emitted topics all flow through one. Subscriptions attached to the source decide which workflows or agents run.
+
+## Add an Event Source
+
+<Steps>
+
+1. Go to **Event Sources** in the sidebar and click **Add Event Source**.
+
+   ![Event Sources List](../../../../../assets/public-docs/events/sources-list.png)
+
+2. Pick a source type, name the source, and save. Webhook sources get a unique callback URL, schedules need a cron expression, and topics need a curated event type.
+
+   ![Add Event Source Dialog](../../../../../assets/public-docs/events/add-source-dialog.png)
+
+3. Open the source to view its callback URL, recent deliveries, and source-specific settings. Each field has an info tooltip (ⓘ) that explains what it does.
+
+   ![Event Source Detail](../../../../../assets/public-docs/events/source-detail.png)
+
+</Steps>
+
+<Aside type="tip">
+For webhook sources, copy the URL from the detail page and register it with the upstream system before sending a test event. Bifrost stores every delivery so you can replay or inspect them later.
+</Aside>
+
+<Aside type="note">
+Microsoft Graph sources create and renew the upstream provider subscription for you. Teams sources use Microsoft Bot Framework authentication and do not create a provider subscription.
+</Aside>
+
+## Next Steps
+
+- [Create Subscriptions](/docs/how-to-guides/events/subscriptions/) — route incoming events to workflows or agents.
+- [Microsoft Event Sources](/docs/how-to-guides/events/microsoft-event-sources/) — Graph and Teams setup details.
+- [Webhook HMAC Authentication](/docs/how-to-guides/events/webhook-hmac/) — verify request authenticity.
+- [Webhook & Event Variables](/docs/how-to-guides/events/webhook-variables/) — reference payload fields in workflow context.

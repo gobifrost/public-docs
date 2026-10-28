@@ -1,0 +1,344 @@
+---
+title: Context API
+description: Complete reference for the execution context
+---
+
+import { Aside, Tabs, TabItem } from "@astrojs/starlight/components";
+
+## Overview
+
+The `context` proxy provides access to organization, user, and execution information in workflows and data providers. No need to pass it as a parameter—just import and use it.
+
+```python
+from bifrost import workflow, context
+
+@workflow(name="example")
+async def example(name: str):
+    # Access context via proxy - no parameter needed
+    org_id = context.org_id
+    user_id = context.user_id
+    return {"org": org_id, "user": user_id}
+```
+
+<Aside type="note">
+The `context` proxy provides identity, organization, and execution metadata. It's automatically available during workflow execution. The only mutation allowed is `set_scope()` for cross-org access.
+</Aside>
+
+## Properties
+
+### User Information
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `user_id` | str | Current user's ID | `"user-123"` |
+| `email` | str | User's email address | `"alice@example.com"` |
+| `name` | str | User's display name | `"Alice Smith"` |
+
+### Organization Information
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `org_id` | str \| None | Organization ID (`None` for global scope) | `"org-456"` or `None` |
+| `org_name` | str \| None | Organization name | `"Acme Corp"` |
+| `organization` | Organization \| None | Full organization object (`None` for global scope) | See Organization type |
+| `scope` | str | Raw scope identifier (use `org_id` instead) | `"org-456"` or `"GLOBAL"` |
+
+### Execution Information
+
+| Property | Type | Description | Example |
+|----------|------|-------------|---------|
+| `execution_id` | str | Unique execution ID | `"exec-789"` |
+| `workflow_deadline` | datetime \| None | UTC time when the workflow expires; `None` if it has no timeout | `datetime(...)` |
+| `workflow_timeout_seconds` | int \| None | Configured workflow timeout; `0` means no timeout | `60` |
+| `parameters` | dict[str, Any] | Extra parameters passed to workflow | `{"custom_key": "value"}` |
+| `startup` | dict[str, Any] \| None | Results from launch workflow | `{"user_data": {...}}` |
+
+### Authorization Flags
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `is_platform_admin` | bool | User is platform administrator |
+| `is_function_key` | bool | Called via API key (not user) |
+| `is_global_scope` | bool | Executing in global scope (no org) |
+
+### ROI Tracking
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `roi` | ROIContext | ROI tracking context |
+| `roi.time_saved` | int | Minutes saved (from workflow definition) |
+| `roi.value` | float | Value metric (from workflow definition) |
+
+### Methods
+
+| Method | Parameters | Returns | Description |
+|--------|-----------|---------|-------------|
+| `set_scope(org_id)` | org_id: str \| None | None | Override effective scope for all subsequent SDK calls. Pass an org UUID to target that org (provider orgs only). Pass `None` to reset to original scope. |
+
+:::note
+To read configuration values, use `bifrost.config.get()` instead of `context.get_config()` (which has been removed).
+:::
+
+## Computed Properties
+
+### org_id
+
+Returns organization ID or None for global scope.
+
+```python
+org_id: str | None = context.org_id
+
+if context.org_id:
+    # Organization-scoped operation
+    users = await get_org_users(context.org_id)
+else:
+    # Global operation
+    all_orgs = await get_all_organizations()
+```
+
+### org_name
+
+Returns organization display name.
+
+```python
+org_name: str | None = context.org_name
+
+logger.info(f"Executing for {context.org_name}")
+```
+
+### is_global_scope
+
+Check if executing in global (platform-wide) scope.
+
+```python
+if context.is_global_scope:
+    # Platform-level operation
+    pass
+else:
+    # Organization-level operation
+    pass
+```
+
+## Organization Object
+
+When `context.organization` is not None:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `id` | str | Organization ID |
+| `name` | str | Display name |
+| `is_active` | bool | Organization is active |
+| `is_provider` | bool | Provider organization (can access other org scopes) |
+
+```python
+if context.organization:
+    org_name = context.organization.name
+    is_active = context.organization.is_active
+```
+
+## Cross-Organization Scope
+
+Provider organizations can use `set_scope()` to target managed organizations for all subsequent SDK calls. Managed orgs are locked to their own scope.
+
+```python
+from bifrost import workflow, context, integrations
+
+@workflow(name="provision_tenant")
+async def provision_tenant(target_org_id: str):
+    # Switch scope to the managed org
+    context.set_scope(target_org_id)
+
+    # All SDK calls now target the managed org
+    graph = await integrations.get("Microsoft Graph")
+    cfg = await config.get("timezone")
+
+    # Reset to original scope
+    context.set_scope(None)
+```
+
+<Aside type="caution">
+Only provider organizations can call `set_scope()` with a different org ID. Non-provider orgs will receive a `PermissionError`.
+</Aside>
+
+## Common Patterns
+
+<Tabs>
+  <TabItem label="Check Permissions" icon="lock">
+```python
+from bifrost import workflow, context
+
+@workflow(name="admin_task")
+async def admin_task():
+    if not context.is_platform_admin:
+        return {
+            "success": False,
+            "error": "Admin privileges required"
+        }
+
+    # Perform admin operation
+    return {"success": True}
+```
+  </TabItem>
+
+  <TabItem label="Org-Scoped Query" icon="seti:folder">
+```python
+from bifrost import workflow, context
+
+@workflow(name="get_org_data")
+async def get_org_data():
+    if not context.org_id:
+        return {"error": "Organization context required"}
+
+    data = await db.query(
+        "SELECT * FROM data WHERE org_id = ?",
+        context.org_id
+    )
+
+    return {"data": data}
+```
+  </TabItem>
+
+  <TabItem label="Logging" icon="log">
+```python
+from bifrost import workflow, context
+import logging
+
+logger = logging.getLogger(__name__)
+
+@workflow(name="example")
+async def example():
+    logger.info("Workflow started", extra={
+        "org_id": context.org_id,
+        "user_id": context.user_id,
+        "execution_id": context.execution_id
+    })
+```
+  </TabItem>
+
+  <TabItem label="Global vs Org" icon="world">
+```python
+from bifrost import workflow, context
+
+@workflow(name="flexible_query")
+async def flexible_query():
+    if context.is_global_scope:
+        # Platform admin viewing all data
+        results = await db.query("SELECT * FROM resources")
+    else:
+        # Organization user viewing their data
+        results = await db.query(
+            "SELECT * FROM resources WHERE org_id = ?",
+            context.org_id
+        )
+
+    return {"results": results}
+```
+  </TabItem>
+
+  <TabItem label="Auth Type" icon="approve-check">
+```python
+from bifrost import workflow, context
+import logging
+
+logger = logging.getLogger(__name__)
+
+@workflow(name="api_endpoint")
+async def api_endpoint():
+    if context.is_function_key:
+        # Called via API key - automated system
+        logger.info("API key authentication")
+    else:
+        # Called by user - interactive
+        logger.info(f"User authentication: {context.email}")
+```
+  </TabItem>
+</Tabs>
+
+## Context in Data Providers
+
+Data providers can access context the same way:
+
+```python
+from bifrost import data_provider, context
+
+@data_provider(name="get_org_users")
+async def get_org_users():
+    # Filter users by organization
+    users = await db.query(
+        "SELECT id, name FROM users WHERE org_id = ?",
+        context.org_id
+    )
+
+    return [
+        {"label": u["name"], "value": u["id"]}
+        for u in users
+    ]
+```
+
+## Type Definition
+
+```python
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any
+
+@dataclass
+class ROIContext:
+    time_saved: int  # Minutes saved per execution
+    value: float     # Value metric per execution
+
+@dataclass
+class ExecutionContext:
+    user_id: str
+    email: str
+    name: str
+    scope: str
+    organization: Organization | None
+    is_platform_admin: bool
+    is_function_key: bool
+    execution_id: str
+    workflow_deadline: datetime | None
+    workflow_timeout_seconds: int | None
+    parameters: dict[str, Any]      # Extra parameters passed to workflow
+    startup: dict[str, Any] | None  # Results from launch workflow
+    roi: ROIContext                 # ROI tracking context
+    _scope_override: str | None     # Set via set_scope()
+
+    @property
+    def org_id(self) -> str | None:
+        if self._scope_override is not None:
+            return self._scope_override
+        return self.organization.id if self.organization else None
+
+    @property
+    def org_name(self) -> str | None:
+        return self.organization.name if self.organization else None
+
+    @property
+    def is_global_scope(self) -> bool:
+        return self.scope == "GLOBAL"
+
+    def set_scope(self, org_id: str | None) -> None:
+        """Override effective scope for all subsequent SDK calls.
+        Only provider orgs can target a different org."""
+        ...
+```
+
+## Best Practices
+
+<Aside type="tip">
+Follow these patterns for clean, maintainable workflows:
+</Aside>
+
+1. **Use the Proxy**: Import `from bifrost import context` - no parameter needed
+2. **Always Check org_id**: Verify org context before org-scoped operations
+3. **Log Context**: Include context in log messages for debugging
+4. **Don't Mutate**: Context is read-only except for `set_scope()`
+5. **Use Properties**: Use `context.org_id` not `context.organization.id`
+6. **Never Log Secrets**: Don't include sensitive data in log messages
+
+## Next Steps
+
+- [bifrost Module Reference](/docs/sdk-reference/sdk/bifrost-module) - Full SDK reference
+- [Decorators Reference](/docs/sdk-reference/sdk/decorators) - Decorator parameters
+- [Writing Workflows](/docs/how-to-guides/workflows/writing-workflows) - Practical guide

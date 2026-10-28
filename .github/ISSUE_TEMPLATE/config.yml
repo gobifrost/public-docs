@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/gobifrost/public-docs/security/advisories/new
+    about: Use GitHub private vulnerability reporting. Do not report security issues in public issues.

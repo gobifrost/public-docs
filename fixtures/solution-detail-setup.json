@@ -1,0 +1,63 @@
+{
+  "setup_complete": false,
+  "items": [
+    {
+      "key": "welcome_email_sender",
+      "type": "string",
+      "required": true,
+      "is_set": false,
+      "description": "From-address used on the client welcome email.",
+      "default": null,
+      "kind": "config",
+      "has_oauth": false,
+      "connected": false
+    },
+    {
+      "key": "default_ticket_priority",
+      "type": "string",
+      "required": false,
+      "is_set": true,
+      "description": "Priority applied to the kickoff ticket.",
+      "default": "Normal",
+      "kind": "config",
+      "has_oauth": false,
+      "connected": false
+    },
+    {
+      "key": "Microsoft 365",
+      "type": "integration",
+      "required": true,
+      "is_set": true,
+      "description": "Sends the welcome email and creates the shared mailbox.",
+      "default": null,
+      "kind": "connection",
+      "has_oauth": true,
+      "connected": false
+    },
+    {
+      "key": "HaloPSA",
+      "type": "integration",
+      "required": true,
+      "is_set": true,
+      "description": "Creates the kickoff ticket and client record.",
+      "default": null,
+      "kind": "connection",
+      "has_oauth": false,
+      "connected": true
+    },
+    {
+      "key": "a1111111-0000-0000-0000-000000000001",
+      "type": "workflow_endpoint_key",
+      "required": true,
+      "is_set": false,
+      "description": "Generate an API key before external callers can use this endpoint.",
+      "default": null,
+      "kind": "workflow_endpoint_key",
+      "has_oauth": false,
+      "connected": false,
+      "workflow_id": "a1111111-0000-0000-0000-000000000001",
+      "workflow_name": "Provision New Client",
+      "allowed_methods": ["POST"]
+    }
+  ]
+}

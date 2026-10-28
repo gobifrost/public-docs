@@ -1,0 +1,13 @@
+{
+  "directories": [
+    "src/content/docs",
+    "src/components/docs",
+    "src/assets/public-docs",
+    "src/content/i18n"
+  ],
+  "files": [
+    "src/styles/docs-custom.css",
+    "config/starlight.mjs",
+    "config/redirects.mjs"
+  ]
+}

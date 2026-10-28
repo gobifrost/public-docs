@@ -1,0 +1,120 @@
+---
+title: Microsoft for MSPs
+description: Understand the identities, permissions, connections, and mappings behind multi-customer Microsoft automation in Bifrost
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Bifrost can manage Microsoft 365 customer tenants with a provider-owned Graph identity and deploy a shared Microsoft Teams app package across those tenants. The [Microsoft CSP Solution](https://github.com/gobifrost/microsoft-csp/tree/fix/csp-onboarding-and-app-shell) adds optional Partner Center and GDAP planning, discovery, and compatibility work. It is not a Bifrost built-in and it is not a prerequisite for Teams.
+
+This guide explains the architecture before you create credentials or grant permissions. Start with discovery: ask what is already configured, offer to inventory it read-only, and recommend whether to reuse, repair, or create each component.
+
+## Discover Before You Configure
+
+Inventory the provider tenant, Partner Center account, Entra applications, service principals, Graph grants, GDAP relationships, provider security groups, Bifrost integrations and mappings, Teams packages, event sources, and dependent workflows. Do not inventory secrets themselves.
+
+For each component, return:
+
+| Decision | Meaning |
+| --- | --- |
+| `reuse` | Healthy, understood, appropriately scoped, and safe to share with its known consumers |
+| `repair` | Correct identity or resource, but missing owners, permissions, mappings, consent, or verification |
+| `create` | Missing, unsupported, unsafe to reuse, or coupled to an unrelated system |
+
+The [Microsoft setup assistant](/docs/how-to-guides/integrations/microsoft/setup-assistant/) contains a reusable discovery prompt. The Solution also publishes a versioned [Microsoft setup prompt](https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/agent-prompts/microsoft-setup.md) and [community-adoption prompt](https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/agent-prompts/community-adoption.md). They are release-pending on this branch; use the copies bundled with the selected Solution release rather than an unpinned prompt.
+
+## The Three Control Planes
+
+| Control plane | What it controls | Typical Bifrost connection |
+| --- | --- | --- |
+| Partner Center | Customer discovery, reseller relationships, and partner operations | Optional `Microsoft CSP` partner-delegated connection and Solution |
+| Microsoft Graph and Exchange Online | Users, groups, licenses, mail, Teams app installation, and other tenant resources | `Microsoft` |
+| Teams bot service | Incoming Teams activities and outgoing bot messages | `Microsoft Teams Bot` |
+
+When present, the CSP Solution uses a Partner Center app-and-user identity. Keep it separate from the `Microsoft` Graph app-only identity and the Teams bot identity: they use different authentication flows, permissions, and operational lifecycles. The CLI operator identity used to inspect or set up these identities is also distinct from Bifrost's runtime identity; an operator's successful CLI sign-in does not prove the runtime application has customer consent or workload access.
+
+## Current Solution Boundary
+
+The Solution owns fresh definitions and install-owned state. Its explicit, install-bound compatibility adapter can read and reconcile existing Workspace registrations and tables only after their exact consumers, scope, and authoritative writer have been reviewed. It does not bulk-import the legacy community CSP app or authentication state, replace shared mappings, or establish portable parity for existing consumers.
+
+Native setup executors currently produce reviewable proposals and confirmed dry-runs only. They do not make live Microsoft mutations. Cross-tenant or cross-resource delegated-token renewal also remains unavailable because the runtime cannot target and persist that renewal safely. See the Solution's [setup-executor contract](https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/setup-executors.md) and [versioned compatibility adoption plan](https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/compat-adoption.md) before adopting a legacy consumer.
+
+## Identities and Tenant Mappings
+
+A provider installation has four important identifiers:
+
+| Identifier | Meaning | Scope |
+| --- | --- | --- |
+| Partner tenant ID | The Microsoft Entra tenant that owns the CSP relationship | Provider |
+| Customer tenant ID | The customer's Microsoft Entra tenant | Customer |
+| Bifrost organization ID | The organization that owns customer-scoped runs and data | Customer |
+| Teams catalog app ID | The ID assigned to the uploaded Teams app package in a customer's catalog | Customer app installation |
+
+The customer tenant ID is the stable key that joins Microsoft to Bifrost. Store one unambiguous mapping from each customer tenant to its Bifrost organization. Teams app catalog IDs are tenant-local values and should be stored as metadata on the same customer's Teams mapping.
+
+<Aside type="caution" title="A valid Microsoft token is not a customer authorization decision">
+The Bot Framework adapter authenticates the expected bot application ID. The native `context.event` then carries the authenticated activity, including its tenant. Route it only after that tenant resolves to exactly one Bifrost organization; reject unknown and ambiguous mappings.
+</Aside>
+
+## What Can Be Automated
+
+| Task | Automation boundary |
+| --- | --- |
+| Create or update a provider-owned Entra application | Microsoft Graph can automate this when the operator has the required directory role and Graph permissions. |
+| Add API permissions to an application | Microsoft Graph can update `requiredResourceAccess`. Granting tenant-wide consent is a separate privileged action. |
+| Discover CSP customers | Partner Center APIs can list customers after the provider completes its own interactive connection. |
+| Plan GDAP relationships and role assignments | The Solution can prepare a bounded proposal and confirmed dry-run. A supported CLI or Graph operator path can make the approved change where Microsoft authorizes it; customer approval may still be required. |
+| Create a customer service principal and grant consent | A supported CLI or Graph path can make the approved change when the customer's authority permits it. The current Solution executor only proposes or dry-runs it. Record and verify the grant in the customer tenant. |
+| Upload a custom Teams app to a customer catalog | Microsoft Graph supports delegated catalog publishing. Application-only publishing is not supported. An authorized user or Teams admin may need to perform this step. |
+| Install or upgrade the provider's Teams app for users and teams | Microsoft Graph supports proactive installation after the package exists in the customer catalog. Use self-scoped installation permissions where possible. |
+| Receive Teams messages | The public Bifrost event source validates Bot Framework requests, then a routing workflow maps the activity tenant to a Bifrost organization. |
+| Reply or send proactive messages | The bot sends through the Bot Connector service using the conversation reference returned by Teams. Graph is used for discovery and app installation, not ordinary bot replies. |
+
+Microsoft's [Secure Application Model](https://learn.microsoft.com/en-us/partner-center/developer/secure-app-model-framework) requires an interactive partner connection with MFA and secure refresh-token storage. If the optional CSP Solution is present, store that connection as an integration rather than asking workflows to manage raw tokens.
+
+The Bot Framework adapter authenticates the bot application, while the routing workflow reads the tenant from the authenticated native event and resolves its Bifrost organization. Treat provider-wide app packaging, proactive deployment, and inbound activity routing as separate concerns when planning a multi-customer rollout.
+
+## Permission Design
+
+Grant permissions by capability, not by copying a long permission list from another provider.
+
+1. Start with the smallest profile that supports named operations you plan to install; do not grant a broad product-level profile by default.
+2. Keep delegated and application permissions separate in your review.
+3. Use GDAP roles, active relationship assignments, and verified provider-group membership for provider-side delegated administration and provisioning. They do not add authority to an already-consented app-only Graph token.
+4. Treat Exchange Online application access as an optional capability with its own role and review.
+5. Treat Teams chat history and resource-specific consent (RSC) as optional. Bot messages and replies do not require broad chat-read permissions.
+6. Reconcile configured permissions against actual workflow usage on a schedule.
+
+The optional CSP Solution can store selected permissions for consistent review and application. A provider should define its own profiles instead of inheriting another MSP's IDs, groups, roles, or historical permissions.
+
+## Recommended Ownership Model
+
+Use one provider-owned Microsoft foundation for shared authentication and mappings. Build optional capabilities on top of it:
+
+- **Microsoft foundation:** integration definitions, provider connection health, customer tenant mappings, and consent records.
+- **Optional CSP and GDAP management:** partner discovery, relationship proposals, role templates, consent planning, and install-bound compatibility reads. Microsoft mutations require an approved external operator path.
+- **Teams bot:** bot identity, Teams app package metadata, webhook event source, tenant routing, and messaging workflows.
+
+This boundary matters when packaging Bifrost Solutions. Other apps may use the same Microsoft integration and tenant-status tables. Do not remove or replace shared resources until dependency checks show that every consumer has moved to the foundation Solution.
+
+## Evidence to Retain
+
+For each provider and customer, record:
+
+- Provider tenant ID and verified Partner Center account
+- Entra application object ID and application ID for each connection
+- Granted Graph and Partner Center permissions
+- GDAP relationship ID, state, expiration, security groups, and role assignments
+- Customer tenant ID to Bifrost organization mapping
+- Teams catalog app ID and installed package version
+- Dates and operators for interactive consent and catalog upload
+- Results of read, install, inbound-message, and proactive-message tests
+
+Do not store secrets, authorization codes, access tokens, or signed URLs in these records.
+
+## Setup Order
+
+1. [Connect Microsoft Graph](/docs/how-to-guides/integrations/microsoft/microsoft-graph/) for app-only customer automation.
+2. [Set Up a Shared Microsoft Teams Bot](/docs/how-to-guides/integrations/shared-teams-bot/) if you need Teams.
+3. Add [Microsoft Partner Center](/docs/how-to-guides/integrations/microsoft/partner-center/) and [GDAP](/docs/how-to-guides/integrations/microsoft/csp-gdap/) only when your workspace uses the optional CSP Solution.
+4. [Use the Microsoft Setup Assistant](/docs/how-to-guides/integrations/microsoft/setup-assistant/) to guide and record the rollout.

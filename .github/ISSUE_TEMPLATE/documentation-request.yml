@@ -1,0 +1,31 @@
+name: Documentation request
+description: Propose documentation that helps a reader complete a specific task.
+title: "docs: "
+labels:
+  - documentation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include credentials, customer data, or other sensitive information.
+  - type: textarea
+    id: reader-problem
+    attributes:
+      label: Reader problem
+      description: Describe the task a reader cannot complete with the current documentation.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Intended outcome
+      description: State the result the new or revised page should help the reader achieve.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Product behavior and evidence
+      description: Include versions, existing pages, or evidence that the proposed guidance is accurate.
+    validations:
+      required: true

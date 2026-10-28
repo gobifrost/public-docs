@@ -1,0 +1,16 @@
+{
+  "id": "11111111-1111-1111-1111-111111111111",
+  "slug": "client-onboarding",
+  "name": "Client Onboarding",
+  "organization_id": null,
+  "global_repo_access": false,
+  "git_connected": true,
+  "git_repo_url": "https://github.com/acme-solutions/client-onboarding",
+  "repo_subpath": null,
+  "git_ref": "main",
+  "version": "2.3.0",
+  "upgraded_from_version": "2.2.1",
+  "update_available_version": "2.4.0",
+  "setup_complete": false,
+  "scope": "global"
+}

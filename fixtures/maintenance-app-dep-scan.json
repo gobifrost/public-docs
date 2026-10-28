@@ -1,0 +1,33 @@
+{
+  "apps_scanned": 8,
+  "files_scanned": 142,
+  "dependencies_rebuilt": 37,
+  "issues_found": 3,
+  "notification_created": true,
+  "issues": [
+    {
+      "app_id": "aaaa1111-1111-1111-1111-111111111111",
+      "app_name": "Onboarding Portal",
+      "app_slug": "onboarding-portal",
+      "file_path": "apps/onboarding-portal/src/NewHire.tsx",
+      "dependency_type": "workflow",
+      "dependency_id": "provision_mailbox"
+    },
+    {
+      "app_id": "aaaa1111-1111-1111-1111-111111111111",
+      "app_name": "Onboarding Portal",
+      "app_slug": "onboarding-portal",
+      "file_path": "apps/onboarding-portal/src/lib/api.ts",
+      "dependency_type": "workflow",
+      "dependency_id": "assign_license"
+    },
+    {
+      "app_id": "bbbb2222-2222-2222-2222-222222222222",
+      "app_name": "Asset Tracker",
+      "app_slug": "asset-tracker",
+      "file_path": "apps/asset-tracker/src/Dashboard.tsx",
+      "dependency_type": "workflow",
+      "dependency_id": "sync_inventory"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+---
+title: What is Bifrost?
+description: Bifrost is the open-source, full-stack development platform for MSPs. Build and run workflows, agents, and apps for your own team and all of your customers.
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+import YouTube from '../../../../components/docs/YouTube.astro';
+
+Build workflows, agents, apps, and forms the way you already do with Claude or your own coding agent, then deploy them to Bifrost and run them for your own team and every customer you support.
+
+Bifrost runs everything underneath: hosting, SSO and role-based access, secrets, OAuth connections, MCP, scheduling, logs, and updates. Each customer is its own organization, so you can share something with all of them, or give it to one organization and one role, and they only ever see their own data.
+
+## Start Here
+
+<YouTube id="dAhyLk8cNTc" title="Getting Started" />
+
+<CardGrid>
+  <LinkCard title="Install Bifrost" description="Run your own instance with Docker Compose." href="/docs/getting-started/installation/" />
+  <LinkCard title="Connect your coding agent" description="Claude Code, Codex, Cursor, Copilot, or anything that speaks MCP." href="/docs/how-to-guides/local-dev/ai-coding/" />
+</CardGrid>
+
+## What You Can Build
+
+<CardGrid>
+  <Card title="Workflows" icon="seti:code">
+    Write Python functions that run from forms, schedules, events, agents, APIs, or other workflows.
+  </Card>
+
+  <Card title="Reusable Integrations" icon="puzzle">
+    Package common API logic once and use it across customers, solutions, and service lines.
+  </Card>
+
+  <Card title="Connections and Secrets" icon="setting">
+    Manage OAuth, encrypted secrets, connection references, and per-organization configuration.
+  </Card>
+
+  <Card title="Forms and Apps" icon="document">
+    Give users safe interfaces for workflows, self-service requests, portals, and internal tools.
+  </Card>
+
+  <Card title="Agents" icon="rocket">
+    Build AI agents that can call your workflows, use tools, and run with observable guardrails.
+  </Card>
+
+  <Card title="Solutions" icon="star">
+    Bundle apps, workflows, agents, tables, and setup steps into installable packages.
+  </Card>
+</CardGrid>
+
+## Why It Exists
+
+MSPs have been automating IT work for years. Now AI coding tools make it easy to build real agents and apps, and plenty of MSPs (and their customers) already are. The hard part is everything after the first build: every new thing needs its own hosting, logins, secrets, and patching, and nobody wants to maintain twenty of those.
+
+Bifrost exists so that work can compound. Instead of rebuilding the same tenant handling, secrets, schedules, forms, logging, and deployment patterns for every project, you build on one shared foundation. Each solution can already understand who is calling it, what organization they belong to, what they are allowed to touch, and which connections or secrets apply.
+
+That is how automation expertise becomes reusable software, not just another service ticket or a workflow trapped inside someone else's platform.
+
+## Built to Stay Yours
+
+Bifrost is open source because the foundation under your automation business should be something you can inspect, operate, and improve. Self-host it, read it, fork it, package your work, and keep the option to move.
+
+AI is moving too quickly to weld your work to one vendor's agents, pricing, or roadmap. Bifrost is designed around open edges: real code, portable packages, model choice, and integrations that can reach the systems your customers already use.
+
+For more on the philosophy behind the project, read [Why This Matters](/docs/about/why-open-source/).
+
+## If You Are Not a Developer
+
+You do not need to become a full-time software engineer to benefit from Bifrost, but Bifrost does assume you want the leverage of real software. AI coding tools, examples, documentation, and community support can help you describe what you need, understand what the code does, and iterate safely.
+
+The platform handles the dangerous repeat work - authentication, secrets, tenant isolation, permissions, execution history, and deployment plumbing - so you can focus on the customer problem. That raises the ceiling: instead of being limited by a low-code canvas, you can build systems that grow with your business.

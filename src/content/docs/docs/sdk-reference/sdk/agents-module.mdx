@@ -1,0 +1,293 @@
+---
+title: Agents Module
+description: SDK reference for waiting on and queueing agent runs
+---
+
+The `agents` module lets you invoke agents programmatically from workflows. Use `agents.run()` when the workflow needs the result, or `agents.enqueue()` when it should return after the run is accepted.
+
+## Import
+
+```python
+from bifrost import agents
+```
+
+## Methods
+
+| Method | Behavior | Returns |
+|--------|----------|---------|
+| `agents.run()` | Queues a run and waits for its result | Agent output or `AgentRunPending` |
+| `agents.enqueue()` | Waits only for HTTP acceptance | `AgentRunHandle` |
+| `agents.get_run()` | Reads the durable run record | `AgentRun` |
+| `agents.wait()` | Waits for a previously queued run | Agent output or `AgentRunPending` |
+
+All four methods are async. Awaiting `agents.enqueue()` waits for the short enqueue request, not for agent execution.
+
+### agents.enqueue()
+
+Queue an agent run and return as soon as the API accepts it with HTTP 202.
+
+```python
+async def enqueue(
+    agent_name: str,
+    input: dict | None = None,
+    *,
+    output_schema: dict | None = None,
+    run_as: str | None = None,
+) -> AgentRunHandle
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `agent_name` | str | Name of the agent to run |
+| `input` | dict | Structured input data for the agent |
+| `output_schema` | dict | JSON Schema for the expected output |
+| `run_as` | str \| None | User ID the run acts as. See [Run As](#run-as). |
+
+#### Returns
+
+An `AgentRunHandle` containing:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `run_id` | str | ID to pass to `agents.get_run()` |
+| `status` | `"queued"` | Initial durable status |
+| `run_as_user_id` | str \| None | The user the run acts as, or `None` when it acts as the caller |
+
+The run row is committed before queue publication, so a returned `run_id` is immediately queryable even if a worker has not claimed it yet.
+
+#### Raises
+
+- `AgentPausedError` — if the target agent is paused
+- `BifrostAPIError` — if the API rejects the request, including an unknown agent, queue publication failure, or a refused `run_as`
+- `RuntimeError` — if `run_as` was given and the server does not support Run As for agents
+
+#### Example
+
+```python
+from bifrost import workflow, agents
+
+@workflow
+async def queue_ticket_triage(ticket_id: str):
+    handle = await agents.enqueue(
+        "ticket-classifier",
+        input={"ticket_id": ticket_id},
+        output_schema={
+            "type": "object",
+            "properties": {
+                "priority": {"type": "string"},
+                "category": {"type": "string"},
+            },
+        },
+    )
+    return {"run_id": handle.run_id, "status": handle.status}
+```
+
+### agents.get_run()
+
+Read the current status and result of an agent run.
+
+```python
+async def get_run(run_id: str) -> AgentRun
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `run_id` | str | ID returned by `agents.enqueue()` |
+
+#### Returns
+
+An `AgentRun` with status, input, output, error, usage, timing, and caller metadata. `run_as_user_id`, `run_as_user_name`, and `run_as_user_email` name the user the run acts as; they are `None` when it acts as the caller. Status progresses from `queued` to `running`, then to a terminal status such as `completed`, `failed`, `timeout`, `cancelled`, or `budget_exceeded`.
+
+#### Raises
+
+- `ValueError` — if the run does not exist
+- `PermissionError` — if the caller cannot access the run
+
+### agents.wait()
+
+Wait for a previously queued run without starting another one.
+
+```python
+async def wait(
+    run_id: str,
+    *,
+    output_schema: dict | None = None,
+    timeout: float | None = None,
+) -> dict | str | AgentRunPending
+```
+
+`timeout` limits only this SDK wait. With no explicit timeout, the SDK waits for a terminal run status or until the enclosing workflow approaches its own deadline. Pass `output_schema` when resuming a run that requested structured output.
+
+#### Example
+
+```python
+from bifrost import agents
+
+result = await agents.wait(run_id, timeout=120)
+```
+
+`AgentRunPending` can be returned again if this wait reaches its limit. Its `run_id` remains valid for another `agents.wait()` or `agents.get_run()` call.
+
+### agents.run()
+
+Execute an agent autonomously and wait for the result.
+
+```python
+async def run(
+    agent_name: str,
+    input: dict | None = None,
+    *,
+    output_schema: dict | None = None,
+    timeout: float | None = None,
+    run_as: str | None = None,
+) -> dict | str | AgentRunPending
+```
+
+#### Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `agent_name` | str | Name of the agent to run |
+| `input` | dict | Structured input data for the agent |
+| `output_schema` | dict | JSON Schema for the expected output (agent will conform its response) |
+| `timeout` | float \| None | Optional maximum seconds to wait. Defaults to no SDK wait limit. This does not change the agent's execution limit. |
+| `run_as` | str \| None | User ID the run acts as. See [Run As](#run-as). |
+
+#### Returns
+
+- If `output_schema` is provided: `dict` matching the schema
+- Otherwise: `str` (the agent's final text response)
+- If the explicit wait limit expires, or the workflow approaches its own deadline: `AgentRunPending`. Its `run_id` identifies the durable run, which the wait timeout does not cancel. `reason` is `"wait_timeout"` or `"workflow_deadline"`; `last_known_status` is the last observed status or `None` if no status request completed. Call `agents.get_run(run_id)` or `agents.wait(run_id)` later.
+
+The SDK checks status with short HTTP requests every 2 seconds for the first 30 seconds, every 5 seconds until five minutes, then every 10 seconds.
+
+Inside a timed workflow, it reserves 15% of the configured time, clamped to 5–30 seconds, so the workflow can return before its deadline. For a 60-second workflow, that reserve is 9 seconds. `context.workflow_deadline` exposes the UTC deadline to workflow code; it is `None` when the workflow has no timeout.
+
+#### Raises
+
+- `RuntimeError` — if the agent run fails
+- `BifrostAPIError` — if the API rejects the request, including an unknown agent
+- `AgentPausedError` — if the target agent is paused
+
+#### Examples
+
+```python
+from bifrost import workflow, agents, AgentRunPending
+
+@workflow
+async def classify_ticket(description: str):
+    """Use an AI agent to classify a support ticket."""
+    result = await agents.run(
+        "ticket-classifier",
+        input={"description": description},
+        output_schema={
+            "type": "object",
+            "properties": {
+                "priority": {"type": "string", "enum": ["low", "normal", "high", "urgent"]},
+                "category": {"type": "string"},
+                "summary": {"type": "string"}
+            }
+        },
+        timeout=120,
+    )
+    if isinstance(result, AgentRunPending):
+        return {"run_id": result.run_id, "wait_ended": result.reason}
+    return result  # {"priority": "high", "category": "billing", "summary": "..."}
+
+
+@workflow
+async def generate_report():
+    """Use an agent to generate a natural language report."""
+    report = await agents.run(
+        "report-writer",
+        input={"report_type": "weekly", "department": "engineering"},
+    )
+    if isinstance(report, AgentRunPending):
+        return {"run_id": report.run_id, "wait_ended": report.reason}
+    return {"report": report}
+```
+
+## Run As
+
+Pass `run_as` to `agents.run()` or `agents.enqueue()` to run the agent as another user. The agent's tools and SDK calls act as that user. The run is still yours: it keeps your reach, and you are recorded as the one who started it.
+
+```python
+from bifrost import workflow, agents
+
+@workflow
+async def triage_for_requester(ticket_id: str, requester_id: str):
+    return await agents.run(
+        "ticket-classifier",
+        input={"ticket_id": ticket_id},
+        run_as=requester_id,
+    )
+```
+
+- You need the **Impersonate Users** permission in that user's organization. Without it, the request is refused with 403. Platform Admins have it.
+- Running as a privileged user, such as a Platform Admin, also needs **Read and Write Privileged Access**.
+- Naming yourself is a plain launch, not impersonation, and needs no permission.
+- Inactive users, the system account, and managed identities can't be run as (400). To run as a managed identity, assign it to the agent instead.
+- An organization-scoped agent can only run as a user from its own organization. A global agent runs in that user's organization.
+- The run detail page shows **Run As** beside the caller, and **Access Checks** records each impersonation.
+
+## How It Works
+
+1. The API commits a durable run row with status `queued`.
+2. The run context is published for a worker to claim.
+3. `agents.enqueue()` returns the run ID; `agents.run()` checks the durable status until it can return the output or a pending result.
+4. The agent loads its system prompt, tools, and knowledge sources.
+5. An LLM tool-calling loop executes: LLM → tool → LLM → ...
+6. The durable row is updated with the terminal status and result.
+
+## Budget Limits
+
+Agent runs are bounded by two limits set on the agent configuration:
+
+| Limit | Description | Default | Max |
+|-------|-------------|---------|-----|
+| `max_iterations` | Max LLM call cycles per run | 50 | 200 |
+| `max_token_budget` | Max total tokens per run | 100,000 | 1,000,000 |
+
+If either limit is reached, the run completes with status `budget_exceeded`.
+
+An optional per-agent `max_run_timeout` can also be configured in the UI to set a hard time limit on runs. Unset agents use the 30-minute execution default. This limit is independent of the SDK wait limit.
+
+## Delegation
+
+When an agent has **Delegated Agents** configured, it automatically receives `delegate_to_<agent_name>` tools. During execution, the agent can delegate tasks to child agents:
+
+```python
+# Parent agent automatically gets delegation tools like:
+# delegate_to_child_agent(task: str) -> str
+# These are called by the LLM, not by your workflow code
+```
+
+Delegation is bounded by:
+- **Max depth**: 5 levels of nested delegation
+- **Timeout**: 600 seconds per delegation call
+- **Child tracking**: Each delegation creates a child `AgentRun` linked via `parent_run_id`
+
+## Cancellation and Rerun
+
+Agent runs support cancellation and rerun via the API:
+
+```python
+import requests
+
+# Cancel a running agent
+requests.post(f"{api_url}/api/agent-runs/{run_id}/cancel", headers=headers)
+
+# Rerun a completed/failed/cancelled run
+response = requests.post(f"{api_url}/api/agent-runs/{run_id}/rerun", headers=headers)
+new_run = response.json()
+```
+
+## See Also
+
+- [Agents and Chat](/docs/how-to-guides/ai/agents-and-chat) — Agent configuration and chat
+- [AI Tools](/docs/how-to-guides/workflows/ai-tools) — Making workflows callable as agent tools
+- [AI Module](/docs/sdk-reference/sdk/ai-module) — Direct LLM completions

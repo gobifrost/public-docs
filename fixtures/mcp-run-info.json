@@ -1,0 +1,5 @@
+{
+  "enabled": true,
+  "mcp_url": "https://bifrost.example.com/mcp",
+  "setup_prompt": "Find the right Bifrost agent, inspect its approved tools, and execute the selected capability."
+}

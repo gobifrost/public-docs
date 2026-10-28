@@ -1,0 +1,300 @@
+---
+title: Agents and Chat
+description: Build conversational and autonomous AI agents that call workflows as tools
+---
+
+import { Aside, Steps, LinkCard, CardGrid } from '@astrojs/starlight/components';
+
+Agents combine a system prompt, a set of workflows exposed as tools, optional knowledge sources, and a budget. They can run interactively (Chat) or autonomously (event-driven, scheduled, or SDK-invoked).
+
+## What you can build
+
+<CardGrid>
+  <LinkCard
+    title="Manage your agent fleet"
+    href="/docs/how-to-guides/agents/fleet-overview/"
+    description="Use the /agents dashboard to create, pause, search, and review every agent at a glance."
+  />
+  <LinkCard
+    title="Review agent runs"
+    href="/docs/how-to-guides/agents/reviewing-runs/"
+    description="Walk flagged runs in the flipbook UI, set thumbs-up/down verdicts, and add review notes."
+  />
+  <LinkCard
+    title="Tune an agent's prompt"
+    href="/docs/how-to-guides/agents/tuning-agents/"
+    description="Use the tune workbench to generate prompt proposals from flagged runs and dry-run them before applying."
+  />
+  <LinkCard
+    title="Filter run history"
+    href="/docs/how-to-guides/agents/run-history-and-filters/"
+    description="Search, filter by verdict and metadata, drill into child runs, and rerun or cancel agent runs."
+  />
+</CardGrid>
+
+## Creating an agent
+
+<Steps>
+
+1. Go to **Agents** in the sidebar and click **New agent**.
+
+2. Fill in name, description, and system prompt. The system prompt is the agent's instructions and personality.
+
+3. Set the **Access Level** (Public, Authenticated, or Role-based) and assign roles if applicable.
+
+4. Pick **Tools** (workflows tagged `is_tool=True` and any system tools).
+
+5. Optionally add **Knowledge Sources** for RAG, and **Delegated Agents** for multi-agent workflows.
+
+6. Save. The agent is immediately available for chat and autonomous runs.
+
+</Steps>
+
+## Access levels
+
+| Level | Who can chat / run |
+|-------|-------------|
+| **Public** | Anyone, no auth |
+| **Authenticated** | Any logged-in user |
+| **Role-based** | Users with at least one assigned role |
+
+## Exposing workflows as tools
+
+Mark a workflow as a tool by setting `is_tool=True` (or using the `@tool` alias):
+
+```python
+from bifrost import workflow
+
+@workflow(
+    is_tool=True,
+    description="Look up a customer by email address",
+)
+async def lookup_customer(email: str):
+    # ...
+    return {"name": "John Doe", "account": "12345"}
+```
+
+The workflow description is what the LLM reads to decide when to call the tool. Be specific. If you need to tune the agent-facing phrasing after discovery, edit it in the workflow record rather than the decorator.
+
+## Knowledge sources
+
+Attach a knowledge namespace to give the agent retrieval-augmented answers. The agent searches the namespace automatically when it needs background context. See [Knowledge Bases](/docs/how-to-guides/ai/knowledge-bases) for namespace setup.
+
+## Chat API
+
+Start conversations programmatically:
+
+```python
+import requests
+
+conversation = requests.post(
+    f"{api_url}/api/chat/conversations",
+    json={"agent_id": "agent-123", "channel": "chat"},
+    headers={"Authorization": f"Bearer {token}"},
+).json()
+
+run = requests.post(
+    f"{api_url}/api/chat/runs",
+    json={
+        "conversation_id": conversation["id"],
+        "content": "Hello, I need help with my account.",
+    },
+    headers={"Authorization": f"Bearer {token}"},
+).json()
+```
+
+`POST /api/chat/runs` records the user message, starts the durable chat run, and returns the conversation plus the persisted user message. If you omit `conversation_id`, Bifrost creates a new conversation for you. Use `GET /api/chat/conversations/{conversation_id}/state` to restore the authoritative transcript after a reconnect.
+
+For live updates, connect a WebSocket:
+
+```javascript
+const ws = new WebSocket(
+    `wss://your-instance.com/ws/connect?channels=chat:${conversationId}`
+);
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === "chat_run_event") console.log(data.payload);
+};
+```
+
+Cancel a running turn with `POST /api/chat/runs/{run_id}/cancel`.
+
+## @Mentions
+
+Switch agents mid-conversation using @mentions:
+
+```
+User: @support-agent I need help with billing
+AI: (responds as support-agent)
+
+User: @tech-agent Can you check my server status?
+AI: (switches to tech-agent)
+```
+
+### Agentless chat
+
+Posting to `/api/chat/conversations` without an `agent_id` uses AI-based routing to pick an appropriate agent or fall back to a system default.
+
+## Autonomous agent runs
+
+Agent runs execute without a chat session. The agent receives input, runs a tool-calling loop, and returns structured output.
+
+### Lifecycle
+
+1. A run is created with input data and (optionally) an output schema.
+2. The agent loads its prompt, tools, and knowledge.
+3. The LLM picks a tool, the tool runs, the result feeds back into the LLM.
+4. The loop continues until the agent answers or hits a budget limit.
+
+### Budgets
+
+| Field | Default | Max | Purpose |
+|-------|---------|-----|---------|
+| `max_iterations` | 50 | 200 | Cap on LLM call cycles |
+| `max_token_budget` | 100,000 | 1,000,000 | Cap on total tokens |
+| `max_run_timeout` | unset | — | Optional hard time limit |
+
+If either iterations or token budget is hit, the run finishes with status `budget_exceeded`.
+
+### Triggering a run from a workflow
+
+Use `agents.run()` when the workflow needs the agent's output before it can continue. If the workflow approaches its deadline first, the agent keeps running and the SDK returns its run ID.
+
+```python
+from bifrost import workflow, agents, AgentRunPending
+
+@workflow
+async def triage_ticket(ticket_id: str):
+    result = await agents.run(
+        "ticket-triage-agent",
+        input={"ticket_id": ticket_id},
+        output_schema={
+            "type": "object",
+            "properties": {
+                "priority": {"type": "string"},
+                "category": {"type": "string"},
+            },
+        },
+    )
+    if isinstance(result, AgentRunPending):
+        return {"run_id": result.run_id, "wait_ended": result.reason}
+    return result
+```
+
+### Queueing a run without waiting
+
+Use `agents.enqueue()` when the workflow only needs to submit the work. Awaiting it waits for the short HTTP 202 acceptance response, not for the agent to finish.
+
+```python
+from bifrost import workflow, agents
+
+@workflow
+async def queue_ticket_triage(ticket_id: str):
+    handle = await agents.enqueue(
+        "ticket-triage-agent",
+        input={"ticket_id": ticket_id},
+        output_schema={
+            "type": "object",
+            "properties": {
+                "priority": {"type": "string"},
+                "category": {"type": "string"},
+            },
+        },
+    )
+    return {"run_id": handle.run_id, "status": handle.status}
+```
+
+The returned run has already been written with status `queued`, so it can be read immediately:
+
+```python
+run = await agents.get_run(run_id)
+
+if run.status == "completed":
+    return run.output
+if run.status in {"failed", "timeout", "cancelled", "budget_exceeded"}:
+    raise RuntimeError(run.error or f"Agent run ended with {run.status}")
+```
+
+Poll with a delay when the caller needs to wait later. Avoid a tight loop; one request per second is usually sufficient.
+
+### Triggering from an event subscription
+
+<Steps>
+
+1. Go to **Events** and open your event source.
+
+2. Click **Add Subscription** and set **Target Type** to **Agent**.
+
+3. Pick the agent. The event payload becomes the agent's input.
+
+</Steps>
+
+### Triggering from the API
+
+```python
+response = requests.post(
+    f"{api_url}/api/agent-runs/execute",
+    json={
+        "agent_name": "ticket-triage-agent",
+        "input": {"ticket_id": "T-123"},
+        "output_schema": {"type": "object", "properties": {"priority": {"type": "string"}}},
+        "timeout": 300,
+    },
+    headers={"Authorization": f"Bearer {token}"},
+)
+```
+
+## Delegation
+
+Agents can delegate to other agents. When you add a delegated agent, the parent automatically receives a `delegate_to_<agent_name>` tool. The LLM decides when to call it.
+
+| Limit | Value |
+|-------|-------|
+| Max depth | 5 |
+| Per-delegation timeout | 600s |
+
+Delegation creates child `AgentRun` rows linked via `parent_run_id`. Child runs are filtered out of the top-level run list and rolled up under the parent in the run detail view.
+
+## Cancellation and rerun
+
+- **Cancel**: stops a running agent. Status transitions `running` → `cancelling` → `cancelled`. Cancellation is checked before each iteration, during tool execution, and via a background watcher.
+- **Rerun**: re-executes a finished run with the same input. Creates a new run with `trigger_type="rerun"`.
+
+Both are exposed in the run detail UI and via `POST /api/agent-runs/{run_id}/cancel` / `POST /api/agent-runs/{run_id}/rerun`.
+
+## Run observability
+
+Every autonomous run records:
+
+- **Steps** — every LLM call and tool execution, including delegation steps with expandable child detail.
+- **AI usage** — input/output tokens and cost grouped by model.
+- **Status** — `queued` → `running` → `completed` | `failed` | `budget_exceeded` | `cancelled`.
+- **Trigger** — `manual`, `webhook`, `schedule`, `workflow`, `rerun`, or `delegation`.
+
+View runs from the agent detail page's Runs tab, the global **History → Agents** page, or via `GET /api/agent-runs`.
+
+<Aside type="note">
+The summarizer that generates each run's `asked` / `did` strings is itself an LLM call. Its cost rolls up into `total_cost_7d` (the **Spend (7d)** card on the fleet dashboard). A backfill of N runs moves that card by roughly `N × avg summarizer cost`.
+</Aside>
+
+## The Coding Agent
+
+The Coding Agent is a built-in platform agent for creating and editing Bifrost workflows. It runs in your workspace context and uses precision editing tools rather than full-file replacements.
+
+| Tool | Purpose |
+|------|---------|
+| `list_content` | List files by entity (`app_file`, `workflow`, `module`) |
+| `search_content` | Regex search with context lines |
+| `read_content_lines` | Read a specific line range |
+| `patch_content` | Surgical string replacement |
+| `replace_content` | Full content replacement / create new file |
+| `delete_content` | Delete a file |
+
+Combined with the Coding Agent's workflow execution, validation, and execution-history tools, these power a search → read → patch loop suited to LLM editing. A client connected to the root `/mcp` endpoint reaches this catalog through the four gateway tools; a client connected to the Coding Agent's `/mcp/{agent_id}` endpoint sees its approved native tools directly.
+
+## Next steps
+
+- [Using AI in workflows](/docs/how-to-guides/ai/using-ai-in-workflows) — direct LLM completions
+- [Knowledge bases](/docs/how-to-guides/ai/knowledge-bases) — RAG setup
+- [MCP Server setup](/docs/how-to-guides/mcp/server-setup) — expose Bifrost to Claude / Copilot / Cursor
+- [Publishing agents as MCP](/docs/how-to-guides/mcp/agents-as-mcp) — turn an agent's tool surface into an external MCP endpoint

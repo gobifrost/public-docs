@@ -1,0 +1,74 @@
+---
+title: Set Up a Solution's Connections
+description: Satisfy a solution's declared integration and config needs after install using the README, the Setup Required signal, and the Setup wizard.
+---
+
+import { Aside, Steps } from "@astrojs/starlight/components";
+
+## Read the solution's README first
+
+The README tab is the install page's first tab. It carries the solution author's setup notes — which integrations to connect, what each config value is for, and any one-time steps.
+
+<Steps>
+
+1. Open the install from **Solutions** and stay on the **README** tab.
+
+2. Follow the author's instructions before opening the Setup wizard.
+
+</Steps>
+
+![A solution install's Overview tab, showing the rendered README alongside an at-a-glance summary of the workflows, apps, forms, and configs it deploys.](../../../../../assets/public-docs/solutions/detail-overview.png)
+
+<Aside type="note">
+The README is owned by the source for a git-connected install and is refreshed on every pull. You can only edit it directly on a disconnected install.
+</Aside>
+
+## Check the Setup Required signal
+
+An install shows a **Setup Required** indicator whenever a required config value is unset, a declared integration does not yet exist, or a protected workflow endpoint does not have a generated key. The install still completes — unmet setup needs are flagged, not blocking.
+
+<Steps>
+
+1. Open the install. A **Setup Required** warning and a **Continue Setup** button appear when anything is unmet.
+
+2. Click **Continue Setup** to launch the Setup wizard.
+
+</Steps>
+
+![The install header showing the Incomplete badge and a Continue Setup button, plus a banner noting how many required configs still need a value.](../../../../../assets/public-docs/solutions/detail-overview.png)
+
+## Satisfy needs in the Setup wizard
+
+The wizard lists every declared requirement paired with whether it is satisfied. Three kinds appear:
+
+- **Config** — a config value the solution reads. Required configs gate completion.
+- **Connection** — an integration the solution calls via `integrations.get("...")`. The need is satisfied once an integration with that name exists.
+- **Endpoint key** — an API key generated for a non-public workflow endpoint. Public endpoints do not require one.
+
+<Steps>
+
+1. Open the wizard from **Continue Setup**. Each unmet item is shown with its key, type, and the author's description.
+
+2. For each unset **config** item, enter the value. Required items are marked; setup is not complete until every required config is set.
+
+3. For each **connection** item, create or connect the named integration in **Settings → Integrations**, then return to the wizard — the item flips to satisfied once the integration exists.
+
+4. Generate a key for each protected workflow endpoint. Store the displayed secret immediately; it is shown only once.
+
+5. When every required config is set, every declared integration exists, and every protected endpoint has a key, the wizard reports setup complete and the **Setup Required** signal clears.
+
+</Steps>
+
+![The Configuration tab's Setup wizard listing each declared connection and config with its satisfied or unmet status.](../../../../../assets/public-docs/solutions/setup-wizard.png)
+
+<Aside type="caution">
+OAuth is **warn-only**. A connection item is satisfied as soon as the named integration exists — even if no OAuth token is connected yet. The wizard flags a missing token, but it never blocks setup completion. Finish the OAuth flow for any integration that needs one, or the solution's workflows will fail at runtime.
+</Aside>
+
+## Updating connections later
+
+Solution-managed entities are read-only in the target environment. Config *values*, integration connections, and generated endpoint keys are install-owned and can be maintained through the Setup wizard and **Settings → Integrations**. Their declarations change only when the author re-deploys or the install auto-pulls a new version.
+
+<Aside type="tip">
+For authors: connection and config needs are not declared by hand. `bifrost solution capture` and `bifrost solution deploy` statically scan workflow source for `integrations.get("...")` and config reads, serialize secret-scrubbed declarations into the bundle, and pre-create empty integration shells on deploy. That is what the operator's Setup wizard reads back.
+</Aside>

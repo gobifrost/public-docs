@@ -1,0 +1,489 @@
+@import "@fontsource-variable/inter";
+
+:root {
+  /* Brand cyan accent */
+  --sl-color-accent: #2fd4d4;
+  --sl-color-accent-low: rgba(47, 212, 212, 0.15);
+  --sl-color-accent-high: #7fe7e7;
+  --sl-color-text: rgba(245, 249, 255, 0.85);
+  --sl-color-text-accent: #2fd4d4;
+
+  /* Near-black surfaces to match the marketing site */
+  --sl-color-bg: #08090b;
+  --sl-color-bg-nav: #08090b;
+  --sl-color-bg-sidebar: #0a0c0f;
+
+  /* Brand typography */
+  --sl-font: "Inter Variable", "Inter", system-ui, sans-serif;
+  --sl-font-mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  --sl-sidebar-width: 24rem;
+
+  --docs-color-heading: #f5f9ff;
+  --docs-color-text: rgba(245, 249, 255, 0.85);
+  --docs-color-muted: rgba(245, 249, 255, 0.7);
+  --docs-color-sidebar-link: rgba(245, 249, 255, 0.6);
+  --docs-color-sidebar-nested: rgba(245, 249, 255, 0.78);
+  --docs-color-link: #2fd4d4;
+  --docs-color-link-hover: #7fe7e7;
+  --docs-color-border: rgba(255, 255, 255, 0.1);
+  --docs-color-border-strong: rgba(255, 255, 255, 0.12);
+  --docs-color-border-soft: rgba(255, 255, 255, 0.07);
+  --docs-color-surface: rgba(255, 255, 255, 0.015);
+  --docs-color-surface-hover: rgba(47, 212, 212, 0.03);
+  --docs-color-table-head: rgba(47, 212, 212, 0.07);
+  --docs-color-row-hover: rgba(255, 255, 255, 0.02);
+  --docs-color-code-bg: #0a0c0f;
+  --docs-color-code-header-bg: rgba(255, 255, 255, 0.04);
+  --docs-color-inline-code-bg: rgba(47, 212, 212, 0.08);
+  --docs-color-inline-code-border: rgba(47, 212, 212, 0.15);
+  --docs-color-accent-border: rgba(47, 212, 212, 0.3);
+  --docs-color-accent-border-hover: rgba(47, 212, 212, 0.8);
+  --docs-color-card-border-hover: rgba(47, 212, 212, 0.4);
+  --docs-color-icon-bg: rgba(47, 212, 212, 0.08);
+  --docs-color-aside-bg: rgba(47, 212, 212, 0.06);
+  --docs-color-tip-bg: rgba(58, 209, 122, 0.06);
+  --docs-color-caution-bg: rgba(255, 178, 77, 0.06);
+  --docs-color-danger-bg: rgba(255, 90, 90, 0.06);
+  --docs-color-header-bg: #08090b;
+  --docs-color-header-border: rgba(255, 255, 255, 0.06);
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] {
+  --sl-color-accent: #2fd4d4;
+  --sl-color-accent-low: rgba(47, 212, 212, 0.15);
+  --sl-color-accent-high: #7fe7e7;
+  --sl-color-text: rgba(245, 249, 255, 0.85);
+  --sl-color-text-accent: #2fd4d4;
+  --sl-color-bg: #08090b;
+  --sl-color-bg-nav: #08090b;
+  --sl-color-bg-sidebar: #0a0c0f;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent: #087d7d;
+  --sl-color-accent-low: rgba(8, 125, 125, 0.12);
+  --sl-color-accent-high: #005f66;
+  --sl-color-text: #334155;
+  --sl-color-text-accent: #087d7d;
+  --sl-color-bg: #ffffff;
+  --sl-color-bg-nav: #ffffff;
+  --sl-color-bg-sidebar: #f8fafc;
+  --sl-color-bg-inline-code: #eef7f7;
+
+  --docs-color-heading: #111827;
+  --docs-color-text: #334155;
+  --docs-color-muted: #475569;
+  --docs-color-sidebar-link: #475569;
+  --docs-color-sidebar-nested: #334155;
+  --docs-color-link: #087d7d;
+  --docs-color-link-hover: #005f66;
+  --docs-color-border: rgba(15, 23, 42, 0.12);
+  --docs-color-border-strong: rgba(15, 23, 42, 0.16);
+  --docs-color-border-soft: rgba(15, 23, 42, 0.08);
+  --docs-color-surface: #ffffff;
+  --docs-color-surface-hover: rgba(8, 125, 125, 0.05);
+  --docs-color-table-head: rgba(8, 125, 125, 0.08);
+  --docs-color-row-hover: rgba(15, 23, 42, 0.03);
+  --docs-color-code-bg: #f8fafc;
+  --docs-color-code-header-bg: #eef2f7;
+  --docs-color-inline-code-bg: rgba(8, 125, 125, 0.08);
+  --docs-color-inline-code-border: rgba(8, 125, 125, 0.18);
+  --docs-color-accent-border: rgba(8, 125, 125, 0.35);
+  --docs-color-accent-border-hover: rgba(8, 125, 125, 0.8);
+  --docs-color-card-border-hover: rgba(8, 125, 125, 0.38);
+  --docs-color-icon-bg: rgba(8, 125, 125, 0.08);
+  --docs-color-aside-bg: rgba(8, 125, 125, 0.07);
+  --docs-color-tip-bg: rgba(24, 121, 78, 0.08);
+  --docs-color-caution-bg: rgba(180, 83, 9, 0.08);
+  --docs-color-danger-bg: rgba(185, 28, 28, 0.08);
+  --docs-color-header-bg: #ffffff;
+  --docs-color-header-border: rgba(15, 23, 42, 0.1);
+  color-scheme: light;
+}
+
+html { background-color: var(--sl-color-bg); }
+
+/* Keep the header logo a sensible size */
+.site-title img, a.site-title img { height: 2rem; width: auto; }
+
+/* --- Brand: rainbow "Bifrost bridge" under the docs header --- */
+.layout__header {
+  position: relative;
+  background: var(--docs-color-header-bg);
+  border-bottom: 1px solid var(--docs-color-header-border);
+}
+.layout__header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: linear-gradient(90deg, #ff5a5a, #ffb24d, #ffe24d, #3ad17a, #2fd4d4, #4d6bff, #7a6bff, #d96bff);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* --- Sidebar hierarchy: clear section labels vs muted items --- */
+.container-sidebar .entry-title {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 0.72rem;
+  font-weight: 700 !important;
+  color: var(--docs-color-heading) !important;
+  margin-top: 1.25rem;
+  opacity: 1;
+}
+.container-sidebar .entry-link,
+.container-sidebar .container-group-link a {
+  color: var(--docs-color-sidebar-link);
+  font-weight: 400;
+}
+.container-sidebar a:hover {
+  color: var(--docs-color-heading);
+}
+.container-sidebar [aria-current="page"] {
+  color: #2fd4d4 !important;
+  font-weight: 600;
+}
+
+/* ============================================================
+   HEADING HIERARCHY WITH RAINBOW/ACCENT UNDERLINES
+   ============================================================ */
+
+.sl-markdown-content h1 {
+  font-size: 2.5rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.02em;
+  color: var(--docs-color-heading) !important;
+  position: relative;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.sl-markdown-content h1::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #ff5a5a, #ffb24d, #ffe24d, #3ad17a, #2fd4d4, #4d6bff, #7a6bff, #d96bff);
+  -webkit-mask-image: linear-gradient(90deg, #000 60%, transparent);
+          mask-image: linear-gradient(90deg, #000 60%, transparent);
+  border-radius: 2px;
+  opacity: 0.9;
+}
+
+.sl-markdown-content h2 {
+  font-size: 1.6rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em;
+  color: var(--docs-color-heading) !important;
+  position: relative;
+  padding-bottom: 0.35rem;
+  margin-top: 2.25rem;
+  margin-bottom: 1rem;
+}
+.sl-markdown-content h2::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 3rem;
+  height: 2px;
+  background: #2fd4d4;
+  border-radius: 2px;
+  opacity: 0.85;
+}
+
+.sl-markdown-content h3 {
+  font-size: 1.2rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.01em;
+  color: var(--docs-color-heading) !important;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.sl-markdown-content h4,
+.sl-markdown-content h5,
+.sl-markdown-content h6 {
+  font-weight: 700;
+  color: var(--docs-color-heading);
+}
+
+/* ============================================================
+   LINKS IN CONTENT
+   ============================================================ */
+
+.sl-markdown-content a {
+  color: var(--docs-color-link);
+  text-decoration: none;
+  border-bottom: 1px solid var(--docs-color-accent-border);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.sl-markdown-content a:hover {
+  color: var(--docs-color-link-hover);
+  border-bottom-color: var(--docs-color-accent-border-hover);
+}
+
+/* ============================================================
+   CARDS / CARD GRID
+   ============================================================ */
+
+.card-grid .card {
+  background: var(--docs-color-surface) !important;
+  border: 1px solid var(--docs-color-border) !important;
+  border-radius: 12px !important;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+.card-grid .card:hover {
+  border-color: var(--docs-color-card-border-hover) !important;
+  background: var(--docs-color-surface-hover) !important;
+}
+
+/* Card title */
+.card-grid .card .sl-flex p:first-child,
+.card-grid .card [class*="title"] {
+  color: var(--docs-color-heading) !important;
+  font-weight: 700;
+}
+
+/* Card icon container */
+.card-grid .card .icon {
+  background: var(--docs-color-icon-bg) !important;
+  border-radius: 8px;
+  padding: 0.4rem;
+}
+
+/* ============================================================
+   ASIDES / CALLOUTS
+   ============================================================ */
+
+.starlight-aside {
+  border-radius: 10px !important;
+  border-width: 0 0 0 3px !important;
+  border-style: solid !important;
+  padding: 1rem 1.25rem !important;
+  margin: 1.5rem 0 !important;
+}
+
+/* Note — cyan */
+.starlight-aside--note {
+  background: var(--docs-color-aside-bg) !important;
+  border-color: #2fd4d4 !important;
+}
+.starlight-aside--note .starlight-aside__title {
+  color: #2fd4d4 !important;
+}
+
+/* Tip — green */
+.starlight-aside--tip {
+  background: var(--docs-color-tip-bg) !important;
+  border-color: #3ad17a !important;
+}
+.starlight-aside--tip .starlight-aside__title {
+  color: #3ad17a !important;
+}
+
+/* Caution — orange */
+.starlight-aside--caution {
+  background: var(--docs-color-caution-bg) !important;
+  border-color: #ffb24d !important;
+}
+.starlight-aside--caution .starlight-aside__title {
+  color: #ffb24d !important;
+}
+
+/* Danger — red */
+.starlight-aside--danger {
+  background: var(--docs-color-danger-bg) !important;
+  border-color: #ff5a5a !important;
+}
+.starlight-aside--danger .starlight-aside__title {
+  color: #ff5a5a !important;
+}
+
+.starlight-aside__title {
+  font-weight: 700 !important;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.35rem !important;
+  gap: 0.4rem !important;
+}
+.starlight-aside__content > :first-child { margin-top: 0 !important; }
+.starlight-aside__content > :last-child { margin-bottom: 0 !important; }
+
+.starlight-aside__content {
+  color: var(--docs-color-text) !important;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+/* ============================================================
+   CODE BLOCKS (expressive-code)
+   ============================================================ */
+
+.expressive-code {
+  margin: 1.5rem 0 !important;
+}
+
+.expressive-code .frame {
+  background: var(--docs-color-code-bg) !important;
+  border: 1px solid var(--docs-color-border) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+
+.expressive-code .header {
+  background: var(--docs-color-code-header-bg) !important;
+  border-bottom: 1px solid var(--docs-color-border-soft) !important;
+}
+
+/* Inline code */
+.sl-markdown-content :not(pre) > code {
+  background: var(--docs-color-inline-code-bg) !important;
+  color: var(--docs-color-link) !important;
+  border: 1px solid var(--docs-color-inline-code-border) !important;
+  border-radius: 4px !important;
+  padding: 0.1em 0.4em !important;
+  font-size: 0.875em !important;
+  font-family: var(--sl-font-mono);
+}
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+
+.sl-markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--docs-color-border);
+  margin: 1.5rem 0;
+}
+
+.sl-markdown-content thead tr {
+  background: var(--docs-color-table-head) !important;
+}
+
+.sl-markdown-content th {
+  color: var(--docs-color-heading) !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem !important;
+  border-bottom: 1px solid var(--docs-color-border-strong) !important;
+  text-align: left;
+}
+
+.sl-markdown-content td {
+  padding: 0.65rem 1rem !important;
+  border-bottom: 1px solid var(--docs-color-border-soft) !important;
+  color: var(--docs-color-text);
+  font-size: 0.9rem;
+}
+
+.sl-markdown-content tr:last-child td {
+  border-bottom: none !important;
+}
+
+.sl-markdown-content tbody tr:hover {
+  background: var(--docs-color-row-hover);
+}
+
+/* ============================================================
+   BLOCKQUOTES
+   ============================================================ */
+
+.sl-markdown-content blockquote {
+  border-left: 3px solid #2fd4d4 !important;
+  background: var(--docs-color-aside-bg) !important;
+  margin: 1.5rem 0 !important;
+  padding: 0.75rem 1.25rem !important;
+  border-radius: 0 8px 8px 0 !important;
+  color: var(--docs-color-muted) !important;
+  font-style: italic;
+}
+
+/* ============================================================
+   GENERAL CONTENT TEXT
+   ============================================================ */
+
+.sl-markdown-content p {
+  color: var(--docs-color-text);
+  line-height: 1.75;
+}
+
+.sl-markdown-content li {
+  color: var(--docs-color-text);
+  line-height: 1.7;
+}
+
+/* ============================================================
+   SIDEBAR GROUP HIERARCHY — top-level groups cycle rainbow,
+   nested groups (e.g. SDK) are smaller + muted/subordinate
+   ============================================================ */
+
+/* Top-level groups: bold, slightly larger, each a rainbow color */
+.container-sidebar-entry > .entry-title {
+  font-size: 0.82rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-top: 1.5rem;
+  opacity: 1 !important;
+}
+.container-sidebar-entry:nth-of-type(8n + 1) > .entry-title { color: #ff5a5a !important; }
+.container-sidebar-entry:nth-of-type(8n + 2) > .entry-title { color: #ffb24d !important; }
+.container-sidebar-entry:nth-of-type(8n + 3) > .entry-title { color: #3ad17a !important; }
+.container-sidebar-entry:nth-of-type(8n + 4) > .entry-title { color: #2fd4d4 !important; }
+.container-sidebar-entry:nth-of-type(8n + 5) > .entry-title { color: #4d6bff !important; }
+.container-sidebar-entry:nth-of-type(8n + 6) > .entry-title { color: #7a6bff !important; }
+.container-sidebar-entry:nth-of-type(8n + 7) > .entry-title { color: #d96bff !important; }
+.container-sidebar-entry:nth-of-type(8n + 8) > .entry-title { color: #ffe24d !important; }
+
+/* Nested groups (an entry-title that sits deeper than the top level): smaller, muted */
+.container-sidebar-entry .container-sidebar-entry .entry-title,
+.container-sidebar ul ul .entry-title,
+.container-group-link .entry-title {
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  color: var(--docs-color-sidebar-nested) !important;
+  text-transform: none !important;
+  margin-top: 0.85rem;
+  padding-left: 0.65rem;
+  border-left: 2px solid var(--docs-color-border-strong);
+}
+
+/* ============================================================
+   CARDS — shrink the oversized default icon + tighten padding
+   ============================================================ */
+
+.sl-markdown-content .card-grid { gap: 0.75rem !important; align-items: stretch !important; }
+.sl-markdown-content .card {
+  padding: 1rem 1.15rem !important;
+  gap: 0.5rem !important;
+  min-height: 8rem;
+}
+.sl-markdown-content .card .icon {
+  font-size: 1.1rem !important;
+  width: 1.9rem !important;
+  height: 1.9rem !important;
+  padding: 0.35rem !important;
+}
+.sl-markdown-content .card .icon svg {
+  width: 1.1rem !important;
+  height: 1.1rem !important;
+}
+.sl-markdown-content .card .title {
+  font-size: 1rem !important;
+}

@@ -1,0 +1,104 @@
+---
+title: Deploy a Solution from a Workspace
+description: Ship a Solution workspace to an install with bifrost solution deploy — org targeting, downgrades, disambiguation, and the capture → pull → deploy order.
+---
+
+import { Steps, Aside } from "@astrojs/starlight/components";
+
+`bifrost solution deploy` reads the `bifrost.solution.yaml` descriptor in the current workspace, bundles its source plus `.bifrost/*.yaml` manifest, and full-replaces the matching install. It is non-interactive: the whole bundle applies in one POST.
+
+## Prerequisites
+
+- A Solution workspace (a directory with `bifrost.solution.yaml`, created by `bifrost solution init`).
+- Authenticated against the target environment (`bifrost login`).
+
+## Deploy into your own org
+
+<Steps>
+
+1. From the solution root, deploy:
+
+    ```bash
+    bifrost solution deploy
+    ```
+
+    (`bifrost deploy` is the top-level alias.)
+
+2. With no `--org`/`--global` flag, the install resolves to your **own org**. The command creates the install if none exists, then full-replaces it.
+
+3. Read the summary — it reports entities upserted, deleted, and any roles auto-created (empty; assign members to grant access):
+
+    ```
+    Deployed install <id>: 3 workflow(s), 1 app(s) upserted, 0 deleted.
+      Auto-created 1 new role(s): Approvers (empty — assign members to grant access).
+    ```
+
+</Steps>
+
+![The install catalog showing the deployed install and its version](../../../../../assets/public-docs/core-concepts/solutions.png)
+
+## Target a different org or global scope
+
+<Steps>
+
+1. Deploy into a specific org by id or name:
+
+    ```bash
+    bifrost solution deploy --org <org-id|name>
+    ```
+
+2. Deploy a global (org-NULL) install:
+
+    ```bash
+    bifrost solution deploy --global
+    ```
+
+</Steps>
+
+<Aside type="note">Each org's install of a slug is independent. Omitting the flag deploys into your own org — it is never a global deploy. `--org` and `--global` are mutually exclusive.</Aside>
+
+## Disambiguate when more than one install matches
+
+When more than one install of the slug exists in the resolved scope, deploy refuses to guess and lists the candidates. Re-run with the explicit target:
+
+```bash
+bifrost solution deploy --solution <install-id>
+```
+
+## Apply a downgrade
+
+Deploy 409-blocks when the bundle version is older than the installed version. Override deliberately:
+
+```bash
+bifrost solution deploy --force
+```
+
+`--force` also bypasses the capture guard below.
+
+## Order captures before deploying
+
+Capturing loose `_repo/` entities into an install (`bifrost solution capture`) is **terminal**: it records a `pending_captures` row for each adopted entity. Until that entity is in your source manifest, a deploy's full-replace would delete it — so deploy 409-blocks with a message naming the entities.
+
+<Steps>
+
+1. Capture into the install (run this **last** among your authoring steps):
+
+    ```bash
+    bifrost solution capture <install-id> --workflow my-flow --table my-table
+    ```
+
+2. Pull the captured entities into the local `.bifrost/` manifest (this never touches `apps/` or source code):
+
+    ```bash
+    bifrost solution pull
+    ```
+
+3. Deploy. The pulled entities are now in source, so the guard clears:
+
+    ```bash
+    bifrost solution deploy
+    ```
+
+</Steps>
+
+<Aside type="caution">Always `pull` after any `capture` and before the next `deploy`. Skipping the pull triggers a 409: `<n> entity(ies) were captured into this solution but are not in your source manifest`. Deploying after a fresh capture without pulling would otherwise delete the captured entities.</Aside>

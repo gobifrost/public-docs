@@ -1,0 +1,248 @@
+---
+title: AI-Assisted Development
+description: Use AI coding tools to build Bifrost workflows, forms, and apps
+---
+
+import YouTube from "../../../../../components/docs/YouTube.astro";
+
+There are five ways to use AI tools with Bifrost. Pick whichever fits — they all talk to the same platform.
+
+Watch the setup end to end:
+
+<YouTube id="PIK65NhtfB4" title="Connecting your coding agent" />
+
+| Approach | Best for | Requirements |
+|----------|----------|--------------|
+| **Claude Code + Bifrost plugin** | Developers with local repos and git workflows | Claude Code, Bifrost SDK installed |
+| **Codex + Bifrost plugin** | Codex users who want the same public Bifrost skills as Claude Code | Codex, Bifrost SDK installed |
+| **Other coding agents + Bifrost skills** | Copilot CLI, Cursor, OpenCode, Gemini CLI, and other tools that read portable agent skills | Bifrost CLI, Python 3.11+ |
+| **Local SDK** | Any AI tool (Copilot, Cursor, etc.) with local files | Bifrost SDK, Python 3.11+ |
+| **MCP (Remote)** | Non-developers, quick edits, no local setup | MCP-compatible AI tool |
+
+## 1. Claude Code with the Bifrost plugin
+
+The fastest path if you use Claude Code. The Bifrost plugin installs the public Bifrost skills:
+
+- `/bifrost:build` — create and debug workflows, forms, agents, and apps with the CLI and MCP.
+- `/bifrost:setup` — install the CLI, authenticate, and configure MCP on a fresh machine.
+- `/bifrost:copilot-cowork-package` — package a Bifrost agent as a Microsoft 365 Copilot Cowork plugin.
+- `/bifrost:migrate` — move a legacy v1 inline app and its backing entities into an installable v2 Solution.
+
+### Install the plugin
+
+The recommended path is the Claude Code plugin marketplace. It auto-updates when you refresh the marketplace, so you stay in lockstep with the latest skill content without re-running install commands.
+
+Inside Claude Code, run:
+
+```
+/plugin marketplace add https://github.com/gobifrost/bifrost
+/plugin install bifrost@bifrost
+```
+
+To pull the latest content later, run `/plugin marketplace update bifrost` — or enable auto-update in `/plugin` → **Marketplaces**.
+
+## 2. Codex with the Bifrost plugin
+
+Codex can install the same public Bifrost plugin from GitHub. This gives Codex the same public skill set as Claude Code: `build`, `setup`, `copilot-cowork-package`, and `migrate`.
+
+Inside Codex, run:
+
+```bash
+codex plugin marketplace add gobifrost/bifrost --ref main
+codex plugin add bifrost@bifrost
+```
+
+To refresh a Git-backed marketplace later:
+
+```bash
+codex plugin marketplace upgrade bifrost
+codex plugin add bifrost@bifrost
+```
+
+## 3. Other Coding Agents with `bifrost skill`
+
+For non-Claude-Code and non-Codex harnesses, install via the Bifrost CLI. It pulls the public skills from GitHub (no clone required) and writes them to both `<cwd>/.claude/skills/` and `<cwd>/.agents/skills/` — the cross-harness portable convention read by Copilot CLI, Cursor, OpenCode, Gemini CLI, and other tools:
+
+```bash
+bifrost skill list                   # show what's currently installed
+bifrost skill update                 # install or refresh all public skills
+bifrost skill update --ref v1.4.2    # pin to a specific release
+bifrost skill remove bifrost-build   # uninstall a skill from both locations
+```
+
+`bifrost skill update` only installs the publicly-distributed skills (`bifrost-build`, `bifrost-setup`, `bifrost-copilot-cowork-package`, `bifrost-migrate`) — internal maintainer skills stay in the repo. Re-run it whenever you want the latest content; there's no auto-update, by design.
+
+### Migrating from a hand-copied skill
+
+Earlier versions of the `bifrost:build` skill were distributed by cloning the bifrost repo and copying `.claude/skills/bifrost-build/` into your project. If you set things up that way, remove the local copy before installing via the plugin or `bifrost skill update` so the two don't drift:
+
+```bash
+rm -rf .claude/skills/bifrost-build .claude/skills/bifrost-setup .claude/skills/bifrost-copilot-cowork-package .claude/skills/bifrost-migrate
+rm -rf .agents/skills/bifrost-build .agents/skills/bifrost-setup .agents/skills/bifrost-copilot-cowork-package .agents/skills/bifrost-migrate
+```
+
+Then run the plugin install or `bifrost skill update` and you're current.
+
+### Setup after installing a plugin or skill
+
+After the plugin or skill is installed, wire up the CLI and (optionally) the MCP server:
+
+```bash
+# Install the SDK from your instance and authenticate
+pipx install https://your-instance.gobifrost.com/api/cli/download/bifrost-cli.tar.gz
+bifrost login --url https://your-instance.gobifrost.com
+
+# (Optional) Add the MCP server to Claude Code for chat-augmented exploration of platform state
+claude mcp add --transport http bifrost https://your-instance.gobifrost.com/mcp
+```
+
+Or run the setup skill in your coding agent and it walks you through everything. In Claude Code, that is `/bifrost:setup`.
+
+### How it works
+
+The build skill gives coding agents two modes:
+
+**SDK-first (local development):**
+1. Start `bifrost watch` to auto-push file changes
+2. Write workflow code locally in your git repo
+3. Files auto-push as you save — no manual sync needed
+4. Test with `bifrost run <file> -w <function> -p '{...}'`
+5. Use the entity CLI commands (`bifrost forms create`, `bifrost agents update`, `bifrost configs set`, ...) or `bifrost api` for raw API calls
+6. Commit and push to GitHub when ready
+
+**MCP-only (remote development):**
+1. Call `bifrost_find_agents` with the task you need to perform
+2. Load the selected agent with `bifrost_get_agent`
+3. Inspect the chosen tool with `bifrost_get_tool_schema`
+4. Run it with `bifrost_execute_tool` and iterate through the same agent boundary
+
+The skill checks integrations, reads SDK documentation, validates before declaring ready, and asks about org scoping.
+
+### CLI commands for platform operations
+
+`bifrost <entity>` covers entity mutations (orgs, roles, workflows, forms, agents, apps, configs, integrations, events, tables). `bifrost api` is the escape hatch for any endpoint not yet wrapped by a typed command:
+
+```bash
+# Download SDK documentation (once per session, then grep locally)
+bifrost api GET /api/docs/sdk > /tmp/bifrost-docs/sdk.md
+
+# Execute a workflow synchronously
+bifrost api POST /api/workflows/{id}/execute '{"workflow_id":"...","input_data":{...},"sync":true}'
+
+# Check an execution
+bifrost api GET /api/executions/{id}
+
+# List platform state (debug sync divergence)
+bifrost workflows list
+bifrost api GET /api/workflows
+```
+
+For the full CLI command index, see the [CLI cheatsheet](/docs/sdk-reference/cli/).
+
+### When to use which
+
+| Surface | Use it for |
+|---------|-----------|
+| **CLI** (`bifrost <entity> ...`, `bifrost run`, `bifrost watch`) | All entity mutations and file sync. First choice for repeatable, scriptable work. |
+| **MCP gateway** (`bifrost_find_agents`, `bifrost_get_agent`, `bifrost_get_tool_schema`, `bifrost_execute_tool`) | Chat-augmented discovery and execution through the agents and tools your role can access. |
+| **`bifrost api`** | Endpoints with no dedicated CLI command yet (e.g. arbitrary admin endpoints, debug routes, analytics queries). |
+
+Forms, apps, and agents are first-class CLI citizens (`bifrost forms create`, `bifrost apps create`, `bifrost agents create`) — they no longer require MCP. Use whichever surface fits the task.
+
+## 4. Local SDK Development
+
+Works with any AI tool that can edit local files (GitHub Copilot, Cursor, Windsurf, etc.).
+
+### Setup
+
+```bash
+pipx install https://your-instance.gobifrost.com/api/cli/download/bifrost-cli.tar.gz
+bifrost login --url https://your-instance.gobifrost.com
+```
+
+The login command opens your browser for authentication. Credentials refresh automatically and use the system credential manager when available, with a platform-specific file fallback.
+
+### Workflow
+
+1. Write Python files with `@workflow`, `@tool`, or `@data_provider` decorators
+2. Start `bifrost watch` in your workspace to auto-push changes
+3. Register newly-decorated functions with `bifrost workflows register --path <file> --function-name <name>`
+4. Test locally: `bifrost run my_workflow.py -w hello_world -p '{"name": "Alice"}'`
+5. All SDK modules (`ai`, `integrations`, `config`, `knowledge`, etc.) work locally — they call the remote API
+6. Commit and push to git when ready
+
+### What to tell your AI tool
+
+Give your AI assistant this context:
+
+```
+I'm building workflows for Bifrost, a Python automation platform.
+- Workflows use `@workflow`, `@tool`, or `@data_provider` decorators from the `bifrost` package
+- All functions must be async
+- SDK modules: bifrost.ai, bifrost.config, bifrost.integrations, bifrost.knowledge, bifrost.tables, bifrost.files, bifrost.users, bifrost.organizations, bifrost.roles, bifrost.executions, bifrost.forms, bifrost.workflows
+- Use `from bifrost import context` to access context.org_id, context.user_id, context.email
+- Use `logging.getLogger(__name__)` for execution logs
+- Return dicts or Pydantic models
+- Entity mutations (orgs, roles, forms, agents, apps, configs, integrations, events, tables) all have first-class CLI commands: `bifrost <entity> <verb>`. See https://docs.gobifrost.com/sdk-reference/cli/ for the full surface.
+```
+
+## 5. MCP for External AI Tools
+
+Connect Claude Desktop, ChatGPT, or any MCP-compatible tool directly to Bifrost. No local files needed.
+
+### Setup
+
+Add the Bifrost MCP server to your AI tool's configuration. For Claude Desktop, add to your config file:
+
+```json
+{
+  "mcpServers": {
+    "bifrost": {
+      "type": "http",
+      "url": "https://your-instance.gobifrost.com/mcp"
+    }
+  }
+}
+```
+
+You can also enable MCP from within Bifrost at **Settings → MCP**.
+
+### What MCP gives you
+
+The root endpoint gives every client four stable tools:
+
+- **Discover:** `bifrost_find_agents` finds relevant agents that the signed-in user can access.
+- **Load:** `bifrost_get_agent` returns the selected agent's live instructions and permission-filtered tool catalog.
+- **Inspect:** `bifrost_get_tool_schema` returns the current input schema for one tool.
+- **Execute:** `bifrost_execute_tool` dispatches the tool through that agent and returns an auditable result envelope.
+
+This catalog does not change whenever a workflow or system tool is added. If you need one agent's native tools to appear directly in the client, connect to `https://your-instance.gobifrost.com/mcp/{agent_id}` instead.
+
+### MCP system prompt
+
+Copy this into your AI tool's system instructions for best results:
+
+````markdown
+You help build automations on the Bifrost platform through its MCP agent gateway.
+
+1. Call `bifrost_find_agents` with the user's complete task.
+2. Select the most relevant accessible agent and call `bifrost_get_agent`.
+3. Follow that agent's live instructions. Do not invent tools that are not in its catalog.
+4. Before each tool call, use `bifrost_get_tool_schema` and supply only schema-valid arguments.
+5. Execute with `bifrost_execute_tool` using the same agent id and tool reference.
+6. If the gateway returns repair guidance, correct the request instead of bypassing the agent boundary.
+
+For creation or mutation work, confirm organization scope before executing the write. Publish apps only when the user explicitly asks.
+````
+
+## Choosing an Approach
+
+**Use Claude Code or Codex + the Bifrost plugin** for the best experience — the public skills handle mode switching, validation, setup, and testing automatically.
+
+**Use Other Coding Agents + `bifrost skill update`** when your agent supports portable `.agents/skills` but not the Claude or Codex plugin marketplace.
+
+**Use Local SDK** if you prefer a different AI tool or want full control over your git workflow.
+
+**Use MCP** if you don't want a local dev environment, or for quick one-off edits and chat-augmented exploration.
+
+All five approaches can be combined. A common pattern is developing workflows locally with the SDK, mutating entities (forms, agents, configs) via CLI, and using MCP for exploration.

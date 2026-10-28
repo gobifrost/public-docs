@@ -1,0 +1,12 @@
+[
+  {
+    "id": "81010101-1111-4111-8111-111111111111",
+    "name": "OpenAI Production",
+    "provider": "openai",
+    "endpoint": "https://api.openai.com/v1",
+    "api_key_set": true,
+    "profile_count": 2,
+    "created_at": "2026-08-20T14:00:00Z",
+    "updated_at": "2026-09-01T16:30:00Z"
+  }
+]

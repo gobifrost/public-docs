@@ -1,0 +1,33 @@
+{
+  "id": "9f1e9a02-3c1d-4a52-9c5b-1c2db1a55d20",
+  "name": "Employee Onboarding Request",
+  "description": "Submit details for a new hire and provision their accounts.",
+  "workflow_id": "11111111-1111-1111-1111-111111111111",
+  "launch_workflow_id": null,
+  "default_launch_params": null,
+  "allowed_query_params": null,
+  "form_schema": {
+    "fields": [
+      {
+        "name": "employee_name",
+        "label": "Employee name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "department",
+        "label": "Department",
+        "type": "text",
+        "required": true
+      }
+    ]
+  },
+  "confirmation_markdown": "## Request received\n\nWe'll begin preparing the new hire's accounts.",
+  "access_level": "authenticated",
+  "organization_id": null,
+  "is_active": true,
+  "is_solution_managed": false,
+  "created_at": "2026-03-12T14:22:18.000000+00:00",
+  "updated_at": "2026-08-05T17:09:25.000000+00:00",
+  "dependency_count": 1
+}

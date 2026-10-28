@@ -1,0 +1,38 @@
+---
+title: Events
+description: Event sources, subscriptions, and webhooks that trigger workflows from external systems.
+---
+
+import { LinkCard } from '@astrojs/starlight/components';
+
+Events let external systems and the platform itself trigger Bifrost workflows. You define an **event source**, then attach **subscriptions** that route incoming events to specific workflows or agents.
+
+Each subscription is org-scoped and can transform the inbound payload into workflow context. Sources can be global (available to every organization) or scoped to a single org. Subscriptions can also add an event-type gate and a payload filter, and both are enforced before a delivery is queued.
+
+![Event Sources](../../../../assets/public-docs/core-concepts/event-sources.png)
+
+## Source types
+
+Every event source is one of three types, shown on the **Event Sources** page (`/event-sources`):
+
+- **Webhook** — an HTTP endpoint that an external system (HaloPSA, Microsoft 365, a generic provider) calls. Each webhook gets a unique callback URL and a per-source rate limit; rejections in the last 24 hours surface in the **Rate limited** column.
+- **Schedule** — a cron expression that fires on a recurring timer, with a timezone and an overlap policy that decides what happens when a run is still active at the next tick.
+- **Topic** — a platform-emitted event identified by a topic string such as `user.invited`. Topics let one part of the platform broadcast a named event that any subscription can react to, without an external caller.
+
+The page lists every source with its 24-hour event volume, status toggle, and edit controls. The status tabs (All / Active / Inactive) and the organization filter narrow the list; platform admins see and manage sources across every org.
+
+## Microsoft sources
+
+Microsoft-specific sources use the webhook adapter layer. See [Microsoft event sources](/docs/how-to-guides/events/microsoft-event-sources/) for the Graph and Teams lifecycle details.
+
+## Built-in topics
+
+Bifrost ships a curated registry of topic strings (for example `user.invited`) alongside any topics already in use. When you create a topic source, the picker draws from this registry so subscriptions stay consistent across the platform. A topic source carries its `event_type` string under its name in the list, making the broadcast it listens for explicit.
+
+## Where to learn more
+
+<LinkCard
+  title="Webhook and Event Variables"
+  href="/docs/how-to-guides/events/webhook-variables/"
+  description="Reference inbound event data from a workflow and map payload fields into context."
+/>

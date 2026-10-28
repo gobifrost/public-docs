@@ -1,0 +1,8 @@
+{
+  "model": "text-embedding-3-small",
+  "dimensions": 1536,
+  "endpoint": null,
+  "is_configured": true,
+  "api_key_set": true,
+  "uses_llm_key": false
+}

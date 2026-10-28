@@ -1,0 +1,38 @@
+---
+title: Exporting and Importing (Moved to Solutions)
+description: Environment-to-environment portability is now handled by Solutions. The bifrost export and bifrost import commands have been removed.
+---
+
+import { LinkCard, Aside } from "@astrojs/starlight/components";
+
+<Aside type="caution" title="These commands were removed">
+`bifrost export --portable` and `bifrost import` no longer exist. Moving forms, agents, workflows, apps, and configuration between environments is now done with **Solutions** — an installable, lifecycle-aware package. Update any scripts that still call the old commands.
+</Aside>
+
+A Solution packages a workspace into a single distributable unit and tracks it through install, update, and uninstall. It replaces the loose "scrub a directory of YAML and replay it" flow that the export/import commands provided.
+
+What you used the old flow for maps onto Solutions like this:
+
+- **Promote dev → prod, or share with another environment** — author a Solution and `bifrost solution deploy`, or hand someone a zip from `bifrost solution export` to `bifrost solution install`.
+- **Back up a known-good state, including secrets** — `bifrost solution export --mode full --password <password>` produces a Fernet-encrypted backup; restore it with `bifrost solution install <zip> --password <password>`.
+- **Keep a target environment from drifting** — a Solution's entities are read-only in the target; updates arrive only through deploy or auto-pull, so nobody edits them by hand.
+
+![The Solutions catalog](../../../../../assets/public-docs/core-concepts/solutions.png)
+
+<LinkCard
+  title="Solutions"
+  href="/docs/core-concepts/solutions/"
+  description="What a Solution is, why entities are read-only in the target, and how the install lifecycle works."
+/>
+
+<LinkCard
+  title="Export or back up a Solution"
+  href="/docs/how-to-guides/solutions/exporting-backup/"
+  description="Produce a shareable distribution zip or a password-encrypted full backup with bifrost solution export."
+/>
+
+<LinkCard
+  title="Install a Solution"
+  href="/docs/how-to-guides/solutions/installing/"
+  description="Install a packaged Solution into an org or globally — from a workspace zip or a git repo."
+/>

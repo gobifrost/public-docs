@@ -1,0 +1,26 @@
+[
+  {
+    "namespace": "support-playbooks",
+    "document_count": 42,
+    "global_count": 30,
+    "org_count": 12
+  },
+  {
+    "namespace": "product-docs",
+    "document_count": 28,
+    "global_count": 28,
+    "org_count": 0
+  },
+  {
+    "namespace": "onboarding-runbooks",
+    "document_count": 17,
+    "global_count": 9,
+    "org_count": 8
+  },
+  {
+    "namespace": "security-policies",
+    "document_count": 11,
+    "global_count": 11,
+    "org_count": 0
+  }
+]

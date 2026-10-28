@@ -1,0 +1,33 @@
+{
+  "id": "a3333333-0000-0000-0000-000000000001",
+  "name": "New Client Intake",
+  "description": "Collect company details to start onboarding.",
+  "workflow_id": "a1111111-0000-0000-0000-000000000001",
+  "launch_workflow_id": null,
+  "default_launch_params": null,
+  "allowed_query_params": null,
+  "form_schema": {
+    "fields": [
+      {
+        "name": "company_name",
+        "label": "Company name",
+        "type": "text",
+        "required": true
+      },
+      {
+        "name": "primary_contact",
+        "label": "Primary contact",
+        "type": "email",
+        "required": true
+      }
+    ]
+  },
+  "confirmation_markdown": "## Intake received\n\nWe'll start the onboarding checklist.",
+  "access_level": "authenticated",
+  "organization_id": null,
+  "is_active": true,
+  "is_solution_managed": true,
+  "created_at": "2026-03-01T10:00:00+00:00",
+  "updated_at": "2026-08-05T17:09:25.000000+00:00",
+  "dependency_count": 1
+}

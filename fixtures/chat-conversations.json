@@ -1,0 +1,34 @@
+[
+  {
+    "id": "c1a2b3c4-0000-4000-8000-000000000001",
+    "agent_id": "a0000000-0000-4000-8000-0000000000a1",
+    "agent_name": "Triage Assistant",
+    "title": "Reset MFA for a locked-out user",
+    "updated_at": "2026-06-14T15:42:11.000Z",
+    "last_message_preview": "MFA has been reset for jordan@acme.com. They'll be prompted to re-enroll at next sign-in."
+  },
+  {
+    "id": "c1a2b3c4-0000-4000-8000-000000000002",
+    "agent_id": "a0000000-0000-4000-8000-0000000000a2",
+    "agent_name": "Onboarding Assistant",
+    "title": "Onboard new hire at Acme Corp",
+    "updated_at": "2026-06-14T11:18:03.000Z",
+    "last_message_preview": "Created the mailbox, assigned the E3 license, and added them to the Sales security group."
+  },
+  {
+    "id": "c1a2b3c4-0000-4000-8000-000000000003",
+    "agent_id": "a0000000-0000-4000-8000-0000000000a3",
+    "agent_name": "License Assistant",
+    "title": "Audit unused Microsoft 365 licenses",
+    "updated_at": "2026-06-13T22:05:47.000Z",
+    "last_message_preview": "Found 7 licenses with no sign-in activity in the last 60 days across two tenants."
+  },
+  {
+    "id": "c1a2b3c4-0000-4000-8000-000000000004",
+    "agent_id": null,
+    "agent_name": null,
+    "title": "Draft a maintenance window notice",
+    "updated_at": "2026-06-12T09:31:20.000Z",
+    "last_message_preview": "Here's a draft email announcing the Saturday firmware update window."
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "shares": [
+    { "location": "_repo", "read_only": false, "has_policy": true },
+    { "location": "reports", "read_only": false, "has_policy": true },
+    { "location": "uploads", "read_only": true, "has_policy": false }
+  ]
+}

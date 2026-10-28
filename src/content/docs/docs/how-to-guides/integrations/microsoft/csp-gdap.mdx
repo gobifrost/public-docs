@@ -1,0 +1,212 @@
+---
+title: Set Up GDAP
+description: Discover, create, approve, assign, and verify least-privilege GDAP relationships for Bifrost customers
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+This guide applies when a workspace uses the optional [Microsoft CSP Solution](https://github.com/gobifrost/microsoft-csp/tree/fix/csp-onboarding-and-app-shell) and needs granular delegated admin privileges (GDAP). CSP and GDAP are not Bifrost built-ins and they are not prerequisites for a shared Teams bot. The separate [Microsoft Graph](/docs/how-to-guides/integrations/microsoft/microsoft-graph/) customer app-only connection can operate after customer application consent without delegated GDAP runtime access.
+
+The Solution has install-owned state and an explicit compatibility adapter for existing Workspace registrations and tables. That adapter does not import a legacy community CSP app, take ownership of shared authentication, or write shared mappings automatically. Its native setup executors issue proposals and confirmed dry-runs only; use a supported CLI or Microsoft Graph path for a separately confirmed live Microsoft change. See the versioned [setup prompt](https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/agent-prompts/microsoft-setup.md) and [community-adoption prompt](https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/agent-prompts/community-adoption.md). These paths are release-pending on the linked branch; use the matching installed-release copy.
+
+<Aside type="caution">
+This procedure changes access across customer tenants. Use a dedicated provider-owned application, require MFA for interactive operators, and test with a development customer before onboarding production customers.
+</Aside>
+
+## Start With Discovery
+
+Ask whether GDAP relationships, provider security groups, operator memberships, access assignments, templates, or legacy DAP access already exist. With permission, inventory them read-only through Microsoft Graph, Partner Center, the Bifrost CLI, and the CSP Solution.
+
+For each customer, report the relationship state, expiration, requested roles, access assignments, provider-local group IDs, effective operator memberships, Bifrost organization mapping, and a `reuse`, `repair`, or `create` recommendation. Never copy a relationship ID or security-group ID from another provider. An unreadable endpoint is `unknown`, not proof that the relationship or group is absent.
+
+## Before You Begin
+
+You need:
+
+- An active Microsoft AI Cloud Partner Program account and Partner Center access
+- A provider Entra tenant associated with the Partner Center account
+- A user who can complete the provider's Partner Center consent with MFA
+- Sufficient Entra and GDAP roles to create applications, service principals, relationships, and role assignments
+- A Bifrost platform administrator account
+- One development customer tenant for acceptance testing
+- A secure secret manager for any client credentials created outside Bifrost
+
+Review Microsoft's [partner security requirements](https://learn.microsoft.com/en-us/partner-center/security/partner-security-requirements-mandating-mfa), [Partner Center authentication guidance](https://learn.microsoft.com/en-us/partner-center/developer/partner-center-authentication), and [Secure Application Model](https://learn.microsoft.com/en-us/partner-center/developer/secure-app-model-framework) before granting access.
+
+## Partner Consent: Which App and Account?
+
+The existing-workspace CSP app uses two integrations with different jobs:
+
+| Integration | Identity | Used for |
+| --- | --- | --- |
+| `Microsoft CSP` | The partner app registration and the partner account that authorized its delegated connection | Partner Center and delegated Graph provisioning calls, including partner consent |
+| `Microsoft` | The app registration whose client ID is configured on the integration | The target of application-permission grants in the partner and customer tenants |
+
+In **Partner Consent**, review both client IDs, the partner tenant, and the account authenticated through `Microsoft CSP`. The operation applies the selected **application permissions to the `Microsoft` app in your own partner tenant**. It does not consent that app in every customer, and it does not grant the selected application permissions to the `Microsoft CSP` app.
+
+1. In the partner tenant, activate **Privileged Role Administrator** or **Global Administrator** for the account authenticated through `Microsoft CSP`, using PIM when applicable. Cloud Application Administrator cannot grant Microsoft Graph application permissions; see Microsoft's [tenant-wide admin-consent role requirements](https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/grant-admin-consent).
+2. Reconnect **Microsoft CSP with that same account** after role activation, so the delegated authorization is renewed. Verify the account and tenant rather than assuming another Azure CLI session is the identity Bifrost uses.
+3. Review the selected application permissions and target `Microsoft` app, then confirm Partner Consent.
+4. Review granted/already-granted counts and individual failures. Verify the target enterprise application's app-role assignments before retrying a partial result.
+
+**Customer Consent** is separate. For the existing-workspace app, link the customer organization and establish active GDAP with the relevant group assignments before choosing the customer's Consent action. Review that exact customer's target app and grants; independently verify the intended workload afterward. Native Solution setup remains limited to the documented proposals and dry-runs until its independent runtime is qualified.
+
+## Design Roles and Groups
+
+Create named profiles that correspond to installed capabilities. The exact permissions depend on your workflows; the following is a review framework, not a permission manifest.
+
+| Profile | Typical capabilities | Review notes |
+| --- | --- | --- |
+| Foundation | Tenant identity, domains, service-principal checks, organization metadata | Prefer read-only permissions. |
+| Identity administration | Users, groups, memberships, and licenses | Separate read and write variants. Match write permissions to GDAP roles. |
+| Mail and calendar | Mailboxes, messages, calendars, and shared mailboxes | Decide whether delegated or application access is required. Apply mailbox access controls where supported. |
+| Device management | Intune managed devices, configuration, and compliance | Intune permissions and licensing are separate from ordinary Graph directory access. |
+| Exchange administration | Exchange Online PowerShell or app-only Exchange operations | Requires Exchange-specific configuration and an appropriate Exchange role. |
+| Teams deployment | Resolve users and install the provider's own Teams app | Prefer `TeamsAppInstallation.ReadWriteSelfForUser.All` and the equivalent team or chat permission only for scopes you support. |
+| Teams history | Read messages outside bot-delivered activities | Optional. Use resource-specific consent where it fits; do not add broad chat permissions to the base profile. |
+
+Use the [Microsoft Graph permissions reference](https://learn.microsoft.com/en-us/graph/permissions-reference) to verify current permission types and admin-consent requirements.
+
+Map capabilities to Entra roles, then map those roles to provider security groups. Prefer a few stable job-function groups over one group per customer or one broad group for every role. Ask the operator which people should belong to each group. Before a live Graph/CLI mutation, present the exact group, members, customer, relationship, role IDs, and verification query; group creation, membership, and access assignments require confirmation for that bounded plan.
+
+## Map Customers
+
+<Steps>
+
+1. In the CSP workspace app, refresh the Partner Center customer list.
+
+2. For each managed customer, create or select the corresponding Bifrost organization.
+
+3. Link the Microsoft customer tenant ID to that Bifrost organization.
+
+4. Verify that each tenant ID maps to exactly one organization. Resolve duplicate or stale mappings before enabling events or write workflows.
+
+5. Store the relationship state and last verification time in the tenant-status record.
+
+</Steps>
+
+Mappings are security boundaries. Workflows should set customer scope only after resolving an exact mapping. Unknown or ambiguous tenants should fail closed.
+
+The Solution's customer-directory and compatibility surfaces can discover tenants and prepare an install-owned link proposal. They do not silently update the existing `Microsoft` mapping, `entra_tenant_id`, or shared tables. Treat any workflow name as release-specific, not a platform contract. Use Bifrost's supported integration interface or CLI for a separately reviewed shared-resource change rather than editing IDs into workflow source.
+
+## Current Solution Automation Surface
+
+The current Solution supports read discovery plus reviewable plans. Confirm the installed release's names, permissions, token handling, and access policy before use; they are not a Bifrost platform contract. The setup executor accepts confirmed dry-runs only and rejects live Microsoft execution. Use CLI or Graph only after it shows the exact target, state, permissions/roles, effect, verification, and recovery steps and an authorized operator confirms that bounded change.
+
+| Surface | Current behavior | Boundary |
+| --- | --- | --- |
+| Customer and GDAP discovery | Read Partner Center, mappings, and bounded GDAP state when the configured connection authorizes it | Missing access is a blocker, not an empty result. |
+| Customer-link and compatibility review | Prepare an install-owned link proposal and identify shared consumers | Existing integration mappings and Workspace tables remain unchanged until separately reviewed. |
+| Six setup operations | Propose and run a confirmed dry-run for GDAP, customer service-principal, registration, delegated permissions, application permissions, and Partner Center consent | No live Microsoft mutation is executed by the native executor. |
+
+Re-read Graph and Bifrost after every write. A workflow execution status of success does not prove customer approval, propagation, or a usable grant. Never permit an access token, refresh token, authorization code, or client secret in a workflow result or execution variable.
+
+## Create a GDAP Relationship
+
+Microsoft Graph exposes the [GDAP relationship APIs](https://learn.microsoft.com/en-us/graph/api/resources/delegatedadminrelationships-api-overview?view=graph-rest-1.0). The relationship lifecycle includes creation, customer approval when required, activation, role assignment, and expiration.
+
+<Steps>
+
+1. Define a relationship name and duration. Use the shortest duration that fits the provider's operating model and renewal process.
+
+2. Select the least-privilege Microsoft Entra roles needed by the customer's installed capabilities.
+
+3. Prepare the relationship through the Solution, inspect the exact request, then create it through the documented Microsoft Graph or supported CLI path after the operator confirms the target, roles, duration, and impact.
+
+4. Send or present Microsoft's approval link if customer approval is required.
+
+5. A customer administrator reviews and approves the invitation in Microsoft 365 admin center. Poll the relationship until it becomes active; do not treat creation or `lockForApproval` as customer approval.
+
+6. Assign provider security groups to the approved roles and verify the named operators' membership in those groups. A template or relationship alone does not establish delegated authority.
+
+7. Verify the assignments through Microsoft Graph, then run a read-only API test in the customer's context.
+
+</Steps>
+
+### Use a Portable GDAP Template
+
+A GDAP template should contain role IDs and logical group references, not IDs copied from another provider tenant. During installation:
+
+1. Select or create the provider's security groups.
+2. Store their provider-local object IDs in setup data.
+3. Select a verified relationship as the source only when importing an existing role design.
+4. Review the resulting template before applying it to another customer.
+
+Never ship a hard-coded relationship ID or provider security-group ID in a reusable Bifrost Solution.
+
+## Establish Customer Consent
+
+Customer consent is separate from the GDAP relationship. The exact path depends on whether you are a direct provider, indirect provider, or control panel vendor. Partner delegated consent, customer delegated consent, customer app-only roles, and workload-specific authority are distinct evidence layers.
+
+<Steps>
+
+1. If using a CSP/GDAP provisioning path, confirm the customer relationship is active, the assigned roles cover the provisioning action, the provider group has that assignment, and the acting operator is a member.
+
+2. Create or locate the provider application's service principal in the customer tenant.
+
+3. Apply the reviewed customer permission profile.
+
+4. Grant delegated consent through the provider's approved CSP/GDAP flow or have a customer administrator complete the consent screen. For customer app-only operations, separately grant and verify the exact application roles and workload authority.
+
+5. Re-read the service principal and OAuth permission grants in the customer tenant.
+
+6. Run one read-only capability test. Run write acceptance tests only with an explicit test object and approval.
+
+</Steps>
+
+Control panel vendors should also review Microsoft's [customer consent APIs](https://learn.microsoft.com/en-us/partner-center/developer/control-panel-vendor-apis). Do not assume that delegated administration automatically grants every application permission. Microsoft Graph's relationship `approve` action is for the documented indirect-provider scenario; it is not a way to silently approve an ordinary customer's invitation.
+
+## Verification Checklist
+
+Complete these checks for the provider:
+
+- The CSP Solution's configured partner-delegated connection, when used, reports healthy.
+- Partner Center customer discovery returns the expected development tenant.
+- Configured application permissions match the selected profiles.
+- No token, authorization code, or client secret appears in workflow results or logs.
+
+Complete these checks for each customer:
+
+- Tenant ID maps to exactly one Bifrost organization.
+- GDAP relationship is active and not close to expiration.
+- Security-group role assignments match the template.
+- The named operator is a member of the assigned provider group and can obtain the required delegated MFA-backed access.
+- Customer service principal exists and grants match the intended profile.
+- A read-only Graph request succeeds in customer scope after application consent. It does not require a delegated GDAP token at runtime.
+- Each installed write capability passes a controlled acceptance test.
+
+## Operations
+
+Monitor connection health, relationship expiration, permission drift, provider-group membership, customer removal, and failed tenant-scoped requests. Re-run verification after any change to permissions, GDAP roles, provider groups, the Entra application, or an installed Solution. A valid delegated token can be reused only for its exact connection, tenant, and resource; targeted cross-tenant or cross-resource renewal remains unavailable in the portable runtime.
+
+When offboarding a customer:
+
+1. Disable event subscriptions and scheduled writes.
+2. Remove the Bifrost tenant mapping.
+3. Remove or expire the GDAP relationship and assignments.
+4. Revoke customer consent and remove the enterprise application when no other approved integration needs it.
+5. Retain only the audit evidence required by your policy.
+
+## Common Failures
+
+| Symptom | Likely cause | Check |
+| --- | --- | --- |
+| Provider connection succeeds but no customers appear | Wrong Partner Center account, missing relationship, or token audience | Provider tenant, account role, and Partner Center connection |
+| Partner Center returns customers but GDAP status is empty | Wrong provider tenant, missing delegated relationship permission, stale authorization, or no Graph-visible relationships | Token tenant and audience, current consent, and Partner Center relationship inventory |
+| Customer appears but Graph calls fail | Missing customer service principal or application consent; a GDAP role may block provider-side provisioning | Application grants, then relationship assignments when provisioning is in scope |
+| A write call returns forbidden | Read profile was installed or GDAP role is insufficient | Workflow capability matrix |
+| A relationship exists but is unusable | It is pending approval, expired, or has no group assignments | Relationship status and access assignments |
+| Setup works only for the original provider | Provider tenant IDs, relationship IDs, or group IDs were hard-coded | Solution config and setup tables |
+| Workflow results contain access tokens | Sensitive values were returned or captured as ordinary variables | Workflow outputs and execution-variable capture |
+
+## Continue With Teams
+
+If the provider will deploy a shared bot, continue with [Set Up a Shared Microsoft Teams Bot](/docs/how-to-guides/integrations/shared-teams-bot/). The bot can reuse customer tenant mappings but has a separate identity, Teams package, event source, and permission profile.
+
+## Consent authority and workload scope
+
+An app-registration owner, an eligible PIM role, or an active GDAP relationship does not establish authority to grant every permission. Cloud/Application Administrator cannot grant Microsoft Graph application roles; use the appropriate privileged customer authority and verify active elevation in the target tenant. Partner Center app+user consent additionally requires the documented AdminAgents and GDAP-group prerequisites. See [Microsoft's admin-consent requirements](https://learn.microsoft.com/en-us/entra/identity/enterprise-apps/grant-admin-consent) and [GDAP/Secure Application Model](https://learn.microsoft.com/en-us/partner-center/developer/gdap-and-secure-application-model).
+
+Exchange Application RBAC and Entra application grants are additive. A scoped Exchange assignment does not restrict an existing tenant-wide Entra grant; the setup agent must inspect both before claiming mailbox isolation. Removing broader grants is a separate reviewed change. See [Exchange Application RBAC](https://learn.microsoft.com/en-us/exchange/permissions-exo/application-rbac).
+
+Review all requested permissions affected by static admin consent, not just the one operation being tested. Keep service-principal creation, requested permissions, effective grants and resource-specific operation evidence separate. The Solution's [consent edge-case guide](https://github.com/gobifrost/microsoft-csp/blob/fix/csp-onboarding-and-app-shell/docs/gdap-consent.md#consent-and-workload-edge-cases) covers these checks for the candidate release.

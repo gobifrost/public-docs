@@ -1,0 +1,158 @@
+{
+  "solution": {
+    "id": "11111111-1111-1111-1111-111111111111",
+    "slug": "client-onboarding",
+    "name": "Client Onboarding",
+    "organization_id": null,
+    "global_repo_access": false,
+    "git_connected": true,
+    "git_repo_url": "https://github.com/acme-solutions/client-onboarding",
+    "repo_subpath": null,
+    "git_ref": "main",
+    "version": "2.3.0",
+    "upgraded_from_version": "2.2.1",
+    "update_available_version": null,
+    "setup_complete": false,
+    "scope": "global"
+  },
+  "workflows": [
+    {
+      "id": "a1111111-0000-0000-0000-000000000001",
+      "name": "provision_new_client",
+      "description": "Create the client record, default tickets, and welcome email.",
+      "organization_id": null,
+      "slug": null,
+      "path": "workflows/onboarding.py",
+      "function_name": "provision_new_client",
+      "type": "workflow",
+      "category": "Onboarding",
+      "access_level": null,
+      "app_model": null,
+      "is_active": null,
+      "logo": null,
+      "source_table": null,
+      "select": null,
+      "created_at": "2026-03-01T10:00:00+00:00"
+    },
+    {
+      "id": "a1111111-0000-0000-0000-000000000002",
+      "name": "lookup_client_status",
+      "description": "Return onboarding progress for a client by domain.",
+      "organization_id": null,
+      "slug": null,
+      "path": "workflows/onboarding.py",
+      "function_name": "lookup_client_status",
+      "type": "tool",
+      "category": "Onboarding",
+      "access_level": null,
+      "app_model": null,
+      "is_active": null,
+      "logo": null,
+      "source_table": null,
+      "select": null,
+      "created_at": "2026-03-01T10:00:00+00:00"
+    }
+  ],
+  "apps": [
+    {
+      "id": "a2222222-0000-0000-0000-000000000001",
+      "name": "Onboarding Tracker",
+      "description": "Dashboard of in-flight client onboardings.",
+      "organization_id": null,
+      "slug": "onboarding-tracker",
+      "path": "apps/onboarding-tracker",
+      "function_name": null,
+      "type": null,
+      "category": null,
+      "access_level": "authenticated",
+      "app_model": "react",
+      "is_active": null,
+      "logo": null,
+      "source_table": null,
+      "select": null,
+      "created_at": "2026-03-01T10:00:00+00:00"
+    }
+  ],
+  "forms": [
+    {
+      "id": "a3333333-0000-0000-0000-000000000001",
+      "name": "New Client Intake",
+      "description": "Collect company details to start onboarding.",
+      "organization_id": null,
+      "slug": null,
+      "path": null,
+      "function_name": null,
+      "type": null,
+      "category": null,
+      "access_level": "authenticated",
+      "app_model": null,
+      "is_active": true,
+      "is_solution_managed": true,
+      "solution_id": "11111111-1111-1111-1111-111111111111",
+      "logo": null,
+      "source_table": null,
+      "select": null,
+      "created_at": "2026-03-01T10:00:00+00:00"
+    }
+  ],
+  "agents": [
+    {
+      "id": "a4444444-0000-0000-0000-000000000001",
+      "name": "Onboarding Assistant",
+      "description": "Answers questions about a client's onboarding status.",
+      "organization_id": null,
+      "slug": null,
+      "path": null,
+      "function_name": null,
+      "type": "agent",
+      "category": null,
+      "access_level": "authenticated",
+      "app_model": null,
+      "is_active": true,
+      "logo": null,
+      "source_table": null,
+      "select": null,
+      "created_at": "2026-03-01T10:00:00+00:00"
+    }
+  ],
+  "claims": [],
+  "tables": [
+    {
+      "id": "a5555555-0000-0000-0000-000000000001",
+      "name": "onboarding_steps",
+      "description": "Per-client checklist of onboarding tasks.",
+      "organization_id": null,
+      "slug": null,
+      "path": null,
+      "function_name": null,
+      "type": null,
+      "category": null,
+      "access_level": null,
+      "app_model": null,
+      "is_active": null,
+      "logo": null,
+      "source_table": null,
+      "select": null,
+      "created_at": "2026-03-01T10:00:00+00:00"
+    }
+  ],
+  "configs": [
+    {
+      "id": "c1111111-0000-0000-0000-000000000001",
+      "key": "welcome_email_sender",
+      "type": "string",
+      "required": true,
+      "description": "From-address used on the client welcome email.",
+      "value_set": false
+    },
+    {
+      "id": "c1111111-0000-0000-0000-000000000002",
+      "key": "default_ticket_priority",
+      "type": "string",
+      "required": false,
+      "description": "Priority applied to the kickoff ticket.",
+      "value_set": true
+    }
+  ],
+  "required_configs_unset": ["welcome_email_sender"]
+}

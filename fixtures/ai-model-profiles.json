@@ -1,0 +1,50 @@
+[
+  {
+    "id": "91010101-1111-4111-8111-111111111111",
+    "name": "Balanced",
+    "connection_id": "81010101-1111-4111-8111-111111111111",
+    "model": "gpt-5.4",
+    "capabilities": {
+      "image_input": true,
+      "pdf_input": true,
+      "tool_calling": true,
+      "source": "verified",
+      "checked_at": "2026-09-01T16:30:00Z",
+      "fingerprint": "openai:gpt-5.4:production"
+    },
+    "enabled_for_chat": true,
+    "connection": {
+      "id": "81010101-1111-4111-8111-111111111111",
+      "name": "OpenAI Production",
+      "provider": "openai"
+    },
+    "assignment_keys": ["primary", "summarization", "chat_default"],
+    "referenced_agent_count": 4,
+    "created_at": "2026-08-20T14:05:00Z",
+    "updated_at": "2026-09-01T16:30:00Z"
+  },
+  {
+    "id": "92020202-2222-4222-8222-222222222222",
+    "name": "Fast",
+    "connection_id": "81010101-1111-4111-8111-111111111111",
+    "model": "gpt-5.4-mini",
+    "capabilities": {
+      "image_input": true,
+      "pdf_input": false,
+      "tool_calling": true,
+      "source": "verified",
+      "checked_at": "2026-09-01T16:30:00Z",
+      "fingerprint": "openai:gpt-5.4-mini:production"
+    },
+    "enabled_for_chat": true,
+    "connection": {
+      "id": "81010101-1111-4111-8111-111111111111",
+      "name": "OpenAI Production",
+      "provider": "openai"
+    },
+    "assignment_keys": ["tuning"],
+    "referenced_agent_count": 2,
+    "created_at": "2026-08-21T09:10:00Z",
+    "updated_at": "2026-09-01T16:30:00Z"
+  }
+]
