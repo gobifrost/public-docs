@@ -1,0 +1,62 @@
+---
+title: Unattended Runs and Identities
+description: Why scheduled and webhook workflows can differ from manual runs when reading integration credentials
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A workflow that runs manually and a workflow that runs from a schedule or webhook
+can behave differently even when the code is identical. The difference is the
+executing identity.
+
+## What each trigger runs as
+
+- A form, app, CLI, agent, or API call runs as the calling user.
+- A schedule or webhook run has no human caller. It runs in the source's
+  organization context under the platform's service identity for that scope.
+- A Solution workflow runs as its install context. Current upstream does not let
+  a Solution-managed workflow carry a custom run identity; `workflows update
+  --run-as` refuses with `409 Conflict: Solution-managed entities can only be
+  managed by deployment methods`, and the portable workflow manifest has no
+  run-identity field.
+
+## Why an integration read can fail
+
+Integration reads resolve the organization's mapping and the integration's
+credential. The executing identity must be allowed to read that credential. A
+manual run by an operator who can read secrets may succeed while the same
+workflow fails unattended with a 401 or an unauthenticated vendor request.
+
+This is not a reason to put credentials in source or in the event payload.
+Keep them in configuration/secrets and fix the executing identity instead.
+
+<Aside type="caution">
+Do not broaden secret-read access across the organization's default identity to
+work around one workflow. Use a dedicated identity for unattended automation and
+grant only what that lane needs.
+</Aside>
+
+## Current options
+
+1. **Run the lane manually** while tuning. Manual execution uses the operator's
+   permissions and is the smallest safe option.
+2. **Use a loose workflow with a dedicated identity.** Create a Provider
+   organization identity, grant it the integration and secret-read permissions
+   the lane needs, point the workflow at it with `workflows update --run-as`,
+   and keep the workflow and its tables outside a Solution.
+3. **Wait for Solution run-as support** if the automation must remain
+   Solution-owned. Track the upstream discussion in
+   [gobifrost/bifrost#1220](https://github.com/gobifrost/bifrost/issues/1220).
+
+## Verify the real execution identity
+
+After configuring a schedule or webhook, run the workflow once from that trigger
+and inspect the execution's identity and logs. A successful manual run does not
+prove the unattended path can read the same integrations.
+
+## Related
+
+- [Workflows](/docs/core-concepts/workflows/) — execution context and security
+- [Permissions & Roles](/docs/core-concepts/permissions/) — access levels and roles
+- [Scopes](/docs/core-concepts/scopes/) — organization and global resolution
+- [Scheduled Workflows](/docs/how-to-guides/workflows/scheduled-workflows/) — schedule sources
