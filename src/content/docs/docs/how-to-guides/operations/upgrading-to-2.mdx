@@ -1,97 +1,68 @@
 ---
 title: Upgrade From 1.4.1 to 2.0
-description: Use the required bridge and authentication maintenance boundary when upgrading an existing installation
+description: Update an existing installation directly and verify its data, workflows and Apps
 ---
 
-An existing 1.4.1 installation must start the authority-protocol bridge before
-upgrading to 2.0. A direct upgrade is deliberately rejected by
-`20261031_authz_claims_gate`. A fresh installation can start at 2.0.
+Update directly from 1.4.1 using the normal image update. No intermediate image
+or manual database step is required. People may need to sign in again in
+browsers, the CLI and MCP clients. Passwords, MFA enrollments, passkeys and
+stored integration credentials are retained.
 
-This upgrade also changes human authentication. Reserve a maintenance window:
-old and new APIs must not serve together. Every person signs in again afterward,
-and existing V2 Apps need their SDK updated before reopening. Passwords, MFA
-enrollments, passkeys, and stored integration credentials are retained.
+Existing supported SDK2 Apps keep working without a rebuild. Retiring the
+scheduler or RabbitMQ and adding workers are separate, optional changes.
 
-## Before Maintenance
+## Before Updating
 
-- Back up PostgreSQL and object storage together, record the currently running
-  images, and verify the backups can be restored. Preserve the platform secret;
-  changing it also affects encrypted integration credentials.
-- Inventory existing V2 Apps. Confirm retained source or original deployment
-  source is available for their SDK rebuilds.
-- Inventory RabbitMQ queues, including historical and poison queues. Keep the
-  broker, its data, and `BIFROST_RABBITMQ_URL` available through recovery. Do not
-  delete queues or replay poison messages as part of this upgrade.
-- Obtain an API-matched CLI. The 1.4.1 CLI cannot parse newer execution
-  responses. See [Human Authentication Cutover](https://github.com/gobifrost/bifrost/blob/4b8c2b224eefd39caa134de16d728b9fbd8bfaa7/docs/runbooks/human-auth-cutover.md) and
-  [Application SDK Updates](https://github.com/gobifrost/bifrost/blob/4b8c2b224eefd39caa134de16d728b9fbd8bfaa7/docs/runbooks/application-sdk-update.md).
+- Back up PostgreSQL and object storage together. Record the running image
+  versions and preserve the platform secret that protects encrypted credentials.
+- Keep RabbitMQ, its data, Redis and the existing broker URL available while
+  queued work recovers. Do not delete queues or replay poison messages as part
+  of the image update.
+- Plan the API replacement. For multiple API replicas or separately exposed MCP
+  endpoints, follow the [Human Authentication Cutover](https://github.com/gobifrost/bifrost/blob/e7c95328aa87bc3a9313ca05c694b5e8c02f0a4a/docs/runbooks/human-auth-cutover.md)
+  procedure. The old and new human validators must not remain reachable together
+  after cutover; a database migration alone does not replace the serving fleet.
 
-## Required Bridge
+## Update the Images
 
-The bridge is the published PR1a API build:
+1. Select the release's API and client images. Use the API image for init,
+   API, worker and scheduler services, preserving their existing data and
+   deployment configuration.
+2. Run the normal init service to apply forward migrations, then complete the
+   image update. Verify every serving API and MCP endpoint runs the selected
+   build.
+3. Sign in again if prompted. Separately installed CLI clients must meet the
+   API's minimum version; use `bifrost update` to install the API-matched CLI,
+   then sign in. Reconnect MCP clients and refresh their tool discovery.
+4. Verify API readiness, an ordinary workflow using an existing integration,
+   and an existing App with live data. Check recovered executions for failures
+   before considering the update complete.
 
-```text
-ghcr.io/gobifrost/bifrost-api:1.4.2-dev.1793357148@sha256:9ca80613869946a0fcad769cdfe355ccaa6968a624df9f38b232c1702a9bda9a
-```
+The API automatically recovers supported work queued by the earlier release.
+An expired or missing Redis context can leave an old run visibly failed; a
+broker-drain record does not prove that every run succeeded. Account for all
+queues and unacknowledged messages before any later broker retirement.
 
-Its source is `cc1cd64fb80aac69885df0db00ba12f61522dacd`. Pin this full
-reference for init and API services during the bridge phase. Do not substitute
-the moving `dev` or `latest` tag. Keep the 1.4.1 client unavailable during this
-phase; a bridge client is not needed for the maintenance steps.
+## Optional App SDK Updates
 
-1. Block ordinary API and MCP ingress, drain requests and WebSockets, and stop
-   old APIs, workers, and schedulers. Preserve the broker and dependencies.
-2. Run the bridge init against the existing database, then start its API.
-   Starting the real API is essential: migrations alone do not record the
-   protocol rollout. Confirm the following returns one row:
+A platform update does not require an SDK rebuild for supported SDK2 Apps,
+even when retained source is unavailable. Their original bundles can renew
+live subscriptions through the current host session.
 
-   ```sql
-   SELECT protocol, first_started_at
-   FROM authz_protocol_state WHERE protocol = 1;
-   ```
+To receive newer SDK features, use [Update Deployed App SDKs](/docs/how-to-guides/apps/updating-deployed-sdks/).
+Automatic updates are opt-in under **Maintenance → App SDK Upgrades** and need
+eligible retained source. A failed rebuild leaves the existing deployment active.
 
-3. The bridge already includes broker recovery. Allow its canonical drain to
-   finish; it requires a 120-second quiet interval after the queues become
-   empty. Confirm the durable record exists:
+## Optional Runtime Cleanup
 
-   ```sql
-   SELECT value_json FROM system_configs
-   WHERE category = 'runtime' AND key = 'legacy_broker_drained'
-     AND organization_id IS NULL;
-   ```
+The unchanged scheduler runs as another executor on the current image. You may
+retire it, remove RabbitMQ after recovery, or adjust worker replicas and memory
+as separate operations. These are not prerequisites for the image update.
 
-   Account for every queue and unacknowledged message before retiring the
-   broker. Recovery supports workflow executions, agent runs, summaries, and
-   summary backfills. Poison messages stay put. A queued run whose old Redis
-   context expired fails visibly; a drain record does not prove every old run
-   succeeded. Investigate failures before proceeding.
-4. Stop the bridge API. Never create a protocol row manually or bypass the
-   migration guard.
+## Recovery
 
-## Activate 2.0
-
-Follow the complete [Human Authentication Cutover](https://github.com/gobifrost/bifrost/blob/4b8c2b224eefd39caa134de16d728b9fbd8bfaa7/docs/runbooks/human-auth-cutover.md)
-procedure while ingress remains blocked:
-
-1. Pin the selected 2.0 API and client artifacts by their published immutable
-   digests. Use the same API artifact for init, API, worker, and scheduler.
-2. Apply the forward migrations and start the new serving fleet. Verify every
-   API replica and exposed MCP mount runs the selected build. Keep older human
-   issuers and validators inaccessible.
-3. Update each existing V2 App with `bifrost apps sdk update APP`. Verify its
-   PlatformJob completed and the active SDK provenance records contract 3.
-   Use controlled operator access and the selected build worker; do not
-   reconcile unrelated Solution entities.
-4. Start the selected workers and scheduler. Check recovered executions and
-   their recorded-user lineage. Remove the legacy broker configuration only
-   after recovery and queue accounting are complete.
-5. Reopen ingress and verify login/MFA, refresh rotation, revoke-all, MCP
-   reconnect, WebSocket reconnect, and an ordinary workflow. People must sign
-   in again in browsers, CLI, and MCP clients. Used or revoked refresh
-   credentials must fail.
-
-After human-auth activation, rolling back below the cutover is unsupported:
-old validators could accept revoked legacy credentials. Use a forward repair
-build. A lower-version disaster recovery needs a separately reviewed revocation
-plan. See [Authority Epoch](https://github.com/gobifrost/bifrost/blob/4b8c2b224eefd39caa134de16d728b9fbd8bfaa7/docs/runbooks/authz-epoch.md) for trigger-disabling maintenance and
-backup-restore rules.
+Keep the new authentication validator when applying a repair build. Rolling
+back below the human-authentication cutover is unsupported. Preserve the
+platform secret; rotating it also affects stored encrypted credentials.
+See [Authority Epoch](https://github.com/gobifrost/bifrost/blob/e7c95328aa87bc3a9313ca05c694b5e8c02f0a4a/docs/runbooks/authz-epoch.md)
+for trigger-disabling maintenance and backup-restore rules.
