@@ -5,11 +5,17 @@ description: Rebuild deployed V2 Apps against the web SDK shipped by the current
 
 import { Aside, Steps } from "@astrojs/starlight/components";
 
-A Bifrost upgrade does not silently replace the SDK inside an already deployed App. Bifrost compares each active V2 App build with the SDK on the current instance and shows when an update is available.
+Supported SDK2 Apps keep working across the 2.0 image update without a rebuild. Optional SDK updates bring newer features and fixes. Bifrost compares each active V2 App build with the SDK on the current instance and shows when an update is available.
 
 <Aside type="caution">
 After upgrading to Bifrost 1.4, update deployed App SDKs so Apps using live table subscriptions understand the new batch-invalidation contract. Older bundles can miss live batch changes until the page reloads.
 </Aside>
+
+## Automatic Updates
+
+Enable **App SDK Upgrades** under **Settings → Maintenance** to rebuild eligible Apps automatically for reviewed SDK changes. This setting starts off. Automatic updates need suitable retained source and dependency metadata; failures leave the current deployment active.
+
+Apps that use server-delivered SDKs receive compatible SDK fixes on reload without an App rebuild. Switching an existing bundled App to server delivery is an optional SDK update.
 
 ## Update Apps from the UI
 
@@ -53,7 +59,7 @@ bifrost solution sdk deployed-update
 
 ## Resolve source-unavailable Apps
 
-An App can be rebuilt only when Bifrost retained suitable deployment source. If the UI shows **Source unavailable**, redeploy the independent App or Solution from its source first. Bifrost 1.4 retains a sanitized archive from that deployment, excluding secrets, dependencies, build output, caches, and version-control data; later SDK updates can then rebuild in place.
+An App can be rebuilt only when Bifrost retained suitable deployment source. **Source unavailable** prevents an optional SDK rebuild; it does not require redeployment to keep a supported SDK2 App working after the platform update. To perform the SDK update, redeploy the independent App or Solution from its source first. Bifrost 1.4 retains a sanitized archive from that deployment, excluding secrets, dependencies, build output, caches, and version-control data; later SDK updates can then rebuild in place.
 
 ## Read the SDK statuses
 
@@ -62,7 +68,7 @@ An App can be rebuilt only when Bifrost retained suitable deployment source. If 
 | **SDK current** | The active App uses the SDK bytes shipped by this Bifrost instance. |
 | **SDK update available** | A different SDK is available and retained source can be rebuilt. |
 | **SDK unknown** | The deployment predates SDK provenance or its SDK metadata is incomplete. Rebuild it when source is available. |
-| **Source unavailable** | Bifrost cannot perform an SDK-only rebuild; redeploy from source. |
+| **Source unavailable** | An SDK-only rebuild needs source. The supported current deployment remains usable; redeploy from source when you want to update its SDK. |
 
 ## See also
 
