@@ -104,6 +104,7 @@ export default {
                             label: "Installation Guide",
                             slug: "docs/getting-started/installation",
                         },
+                        { label: "Upgrade to 2.0", slug: "docs/how-to-guides/operations/upgrading-to-2" },
                         {
                             label: "For Non-Developers",
                             slug: "docs/getting-started/for-non-developers",
@@ -218,6 +219,8 @@ export default {
                                     label: "Writing Workflows",
                                     slug: "docs/how-to-guides/workflows/writing-workflows",
                                 },
+                                { label: "Convert Workflow Permissions", slug: "docs/how-to-guides/workflows/converting-permissions" },
+                                { label: "Base Role Defaults", slug: "docs/how-to-guides/operations/base-role-defaults" },
                                 {
                                     label: "Sending Email",
                                     slug: "docs/how-to-guides/workflows/sending-email",

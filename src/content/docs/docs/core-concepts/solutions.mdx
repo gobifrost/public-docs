@@ -7,6 +7,8 @@ import { Aside } from '@astrojs/starlight/components';
 
 A **Solution** is a packaged unit of Bifrost work — apps, workflows, forms, agents, tables, and config declarations — bundled behind a single identity so it can be installed into an org, updated over time, and removed cleanly. It is the answer to a recurring question: "I built this thing in one environment; how do I ship it to ten others and keep them in sync?"
 
+To install a package from the UI, choose **Install Solution**, then **Import as a Solution**. Next choose **From a repository** or **From a zip**. **Import into workspace** instead brings definitions into a workspace without creating a lifecycle-managed installation.
+
 Solutions replace the older `bifrost export --portable` / `bifrost import` flow. Those commands were removed. The portable-bundle approach moved files between environments but had no notion of *ownership*, *scope*, or *lifecycle* — once a bundle landed, the target environment couldn't tell which entities came from the bundle, couldn't protect them from drift, and couldn't update them as a set. Solutions close those gaps by treating the package as a first-class, server-tracked install.
 
 ![The Solutions catalog showing installed solution packages with scope, source, and version badges](../../../../assets/public-docs/core-concepts/solutions.png)
