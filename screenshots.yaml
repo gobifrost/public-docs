@@ -2311,3 +2311,66 @@ entries:
     captured_at:
       bifrost_sha: a0f838bd6fe2c8bc8177b358902ac99a808a40d1
       timestamp: '2026-11-07T01:38:55.579Z'
+  - id: fast-path-capacity
+    image: src/assets/public-docs/workflows/fast-path-capacity.png
+    route: /settings/kubernetes-executions
+    viewport:
+      width: 1440
+      height: 1280
+    source_globs:
+      - client/src/pages/settings/KubernetesSettings.tsx
+    capture:
+      crop:
+        x: 528
+        'y': 278
+        width: 880
+        height: 820
+      mocks:
+        - url: '**/api/admin/kubernetes/status'
+          body:
+            configured: true
+        - url: '**/api/admin/kubernetes/execution'
+          fixture: fixtures/fast-path-capacity.json
+      actions:
+        - wait_for: '[role="status"]:has-text("1 of 1 reserved workers ready at last refresh")'
+        - wait_for: '#k8s-app-priority'
+    diataxis:
+      page: src/content/docs/docs/how-to-guides/workflows/reserved-capacity.mdx
+      type: how-to
+      heading: Reserve Capacity
+    captured_at:
+      bifrost_sha: 5c9dac6a6ba2fe975b59d49a582987c3b49c3da6
+      timestamp: '2026-11-10T13:22:25.038Z'
+  - id: fast-path-priority
+    image: src/assets/public-docs/workflows/fast-path-priority.png
+    route: /workflows
+    source_globs:
+      - client/src/components/workflows/WorkflowEditDialog.tsx
+    capture:
+      crop:
+        x: 296
+        'y': 112
+        width: 848
+        height: 680
+      mocks:
+        - url: '**/api/workflows'
+          fixture: fixtures/fast-path-workflow.json
+        - url: '**/api/workflows?**'
+          fixture: fixtures/fast-path-workflow.json
+        - url: '**/api/workflows/00000000-0000-0000-0000-0000000000aa/roles'
+          body:
+            workflow_id: 00000000-0000-0000-0000-0000000000aa
+            role_ids: []
+      actions:
+        - click: button[aria-label="App Lookup actions"]
+        - click: '[role="menuitem"]:text-is("Edit")'
+        - click: '[role="tab"]:has-text("Execution")'
+        - wait_for: '[role="combobox"]:has-text("Fast Path")'
+        - wait_for: '[role="dialog"] button:text-is("Save Changes"):enabled'
+    diataxis:
+      page: src/content/docs/docs/how-to-guides/workflows/reserved-capacity.mdx
+      type: how-to
+      heading: Select Workflow Priority
+    captured_at:
+      bifrost_sha: 5c9dac6a6ba2fe975b59d49a582987c3b49c3da6
+      timestamp: '2026-11-10T13:22:25.076Z'

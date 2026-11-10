@@ -219,6 +219,7 @@ export default {
                                     label: "Writing Workflows",
                                     slug: "docs/how-to-guides/workflows/writing-workflows",
                                 },
+                                { label: "Reserve Workers for Priority Workflows", slug: "docs/how-to-guides/workflows/reserved-capacity" },
                                 { label: "Convert Workflow Permissions", slug: "docs/how-to-guides/workflows/converting-permissions" },
                                 { label: "Base Role Defaults", slug: "docs/how-to-guides/operations/base-role-defaults" },
                                 {
