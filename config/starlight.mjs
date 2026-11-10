@@ -227,6 +227,10 @@ export default {
                                     slug: "docs/how-to-guides/workflows/sending-email",
                                 },
                                 {
+                                    label: "Unattended Runs and Identities",
+                                    slug: "docs/how-to-guides/workflows/unattended-runs",
+                                },
+                                {
                                     label: "Using Decorators",
                                     slug: "docs/how-to-guides/workflows/using-decorators",
                                 },
