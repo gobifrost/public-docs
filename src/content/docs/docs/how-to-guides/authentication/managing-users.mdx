@@ -24,9 +24,9 @@ The status column is sortable, so you can group pending and expired invites toge
 
 <Steps>
 
-1. Click the **+** button in the top-right of the Users page.
+1. Choose **Create User** on the Users page.
 
-2. Enter the email and name, then choose whether the user is a **platform admin** or a member of a specific **organization**.
+2. Enter the email and name, choose the user type and organization, and review the **Base Role** and additional **Roles**. Leaving the base role unset uses the effective provisioning default for that organization.
 
 3. Save. Bifrost creates the account and a registration link.
 
@@ -56,8 +56,11 @@ Disabling is reversible; deleting is not. Use **Show disabled** above the table 
 Select multiple users with the row checkboxes (you can't select yourself). A bulk action bar appears with:
 
 - **Move to organization** — reassign selected users to another org
-- **Replace roles** — overwrite role assignments across the selection
+- **Replace Roles** — replace the selected users’ additional role assignments
+- **Set Base Role** — set the base role separately across the selection
 - **Disable / Enable** — toggle access for everyone selected
+
+Available actions depend on your permissions and organization reach. See [Base Role Defaults](/docs/how-to-guides/operations/base-role-defaults) for new-account provisioning.
 
 If some users in a bulk operation fail, Bifrost reports the partial result so you can see exactly which rows succeeded.
 

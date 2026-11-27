@@ -7,7 +7,7 @@ import redirects from "./config/redirects.mjs";
 
 export default defineConfig({
   site: "https://gobifrost.com",
-  redirects,
+  redirects: { "/": "/docs/about/", ...redirects },
   build: { inlineStylesheets: "auto" },
   integrations: [sitemap(), starlight(starlightConfig), mdx()],
 });

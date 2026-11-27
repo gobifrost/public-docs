@@ -104,6 +104,7 @@ export default {
                             label: "Installation Guide",
                             slug: "docs/getting-started/installation",
                         },
+                        { label: "Upgrade to 2.0", slug: "docs/how-to-guides/operations/upgrading-to-2" },
                         {
                             label: "For Non-Developers",
                             slug: "docs/getting-started/for-non-developers",
@@ -217,6 +218,13 @@ export default {
                                 {
                                     label: "Writing Workflows",
                                     slug: "docs/how-to-guides/workflows/writing-workflows",
+                                },
+                                { label: "Reserve Workers for Priority Workflows", slug: "docs/how-to-guides/workflows/reserved-capacity" },
+                                { label: "Convert Workflow Permissions", slug: "docs/how-to-guides/workflows/converting-permissions" },
+                                { label: "Base Role Defaults", slug: "docs/how-to-guides/operations/base-role-defaults" },
+                                {
+                                    label: "Sending Email",
+                                    slug: "docs/how-to-guides/workflows/sending-email",
                                 },
                                 {
                                     label: "Using Decorators",
@@ -585,6 +593,7 @@ export default {
                                 {
                                     label: "Email Module",
                                     slug: "docs/sdk-reference/sdk/email-module",
+                                    badge: { text: "Deprecated", variant: "danger" },
                                 },
                                 {
                                     label: "Executions Module",

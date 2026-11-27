@@ -17,6 +17,7 @@ Describe the concrete reader problem and the result this change provides.
 
 ## Review notes
 
+- [ ] I have permission to contribute this material under the applicable repository licenses and have retained third-party notices.
 - [ ] The change is focused and does not include unrelated edits.
 - [ ] The change contains no customer data, credentials, tokens, or other secrets.
 - [ ] I did not edit generated files, reference code, or license provenance without maintainer guidance.

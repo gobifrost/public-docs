@@ -45,11 +45,11 @@ bifrost --version
 
 The flag short-circuits before any other CLI logic, so it works even when the CLI can't reach an API.
 
-### Web client (sidebar / footer)
+### Web Client Help Menu
 
-The version is printed in the user dropdown in the top-right of the app. Click it to copy the version string to your clipboard — handy when filing bug reports.
+Open **Help** in the top-right of the app to see the installed version. Select the version entry to copy it when filing a bug report.
 
-![Version pill in the user menu](../../../../assets/public-docs/about/ui-version-display.png)
+![Installed version in the Help menu](../../../../assets/public-docs/about/ui-version-display.png)
 
 The client reads its version from `VITE_BIFROST_VERSION` at build time. If that env var isn't set during the Vite build, the menu displays `unknown`.
 
