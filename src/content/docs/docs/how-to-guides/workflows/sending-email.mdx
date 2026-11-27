@@ -1,0 +1,141 @@
+---
+title: Sending Email
+description: Send transactional email from a workflow using your own provider and an event-driven handoff
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Current Bifrost has no built-in email SDK and no **Settings → Email** page. The
+`bifrost.email` module, platform email configuration, and `POST /api/email/send`
+were removed in [Bifrost PR #273](https://github.com/gobifrost/bifrost/pull/273),
+before the **v1.0.0** release. They are absent from both **v1.0.0** and **v1.0.5**.
+Email delivery is now an ordinary workflow responsibility: call your provider from
+a workflow, and trigger that workflow with an event.
+
+<Aside>
+This page uses SMTP2Go's HTTP API as the example provider. The same pattern works
+with any transactional email API, Microsoft Graph, or SMTP relay.
+</Aside>
+
+## Store the provider credentials
+
+Keep the sender and API key in configuration rather than in source. A global secret
+is the usual choice for a shared notification workflow; use an organization-scoped
+value when a single customer has its own sender.
+
+```sh
+bifrost configs set smtp2go_api_key --value "<api-key>" --type secret --global
+bifrost configs set smtp2go_from_address --value "notifications@example.com" --type string --global
+```
+
+Read them inside the workflow with `config.get()`. The value resolves through the
+organization → global cascade. See [Configuration](/docs/core-concepts/config/) and
+[Storing Sensitive Config Values](/docs/how-to-guides/integrations/secrets-management/).
+
+## Create the topic source
+
+Create a **Topic** event source named `email.send_requested`. The topic string must
+contain a dot. See [Create an Event Source](/docs/how-to-guides/events/event-sources/)
+and [Events](/docs/core-concepts/events/).
+
+Then subscribe your workflow to that source. The workflow below reads the full event
+body from `_event`, so no input mapping is required. If you prefer mapped parameters,
+map `{{ payload.to }}` and the other fields instead.
+
+## Write the sending workflow
+
+```python
+from bifrost import config, context, workflow
+import httpx
+
+@workflow(category="Notifications", tags=["email", "notifications"])
+async def send_email_requested():
+    """Send one email from an email.send_requested topic event."""
+    event = context.parameters.get("_event", {})
+    data = event.get("body") or {}
+
+    recipients = data.get("to") or []
+    subject = data.get("subject")
+    body = data.get("body")
+    if not recipients or not subject or not body:
+        raise ValueError("Email event requires to, subject, and body")
+
+    api_key = await config.get("smtp2go_api_key")
+    sender = await config.get("smtp2go_from_address")
+    if not api_key or not sender:
+        raise RuntimeError("Email provider is not configured")
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            "https://api.smtp2go.com/v3/email/send",
+            headers={"X-Smtp2go-Api-Key": str(api_key)},
+            json={
+                "sender": str(sender),
+                "to": recipients,
+                "subject": subject,
+                "text_body": body,
+                "fastaccept": True,
+            },
+        )
+        response.raise_for_status()
+        result = response.json().get("data", {})
+        if result.get("error") or result.get("error_code") or result.get("failed") or result.get("failures"):
+            raise RuntimeError("Email provider rejected all or part of the request")
+        if not result.get("email_id"):
+            raise RuntimeError("Email provider did not confirm acceptance")
+
+    return {"accepted": True, "email_id": result["email_id"]}
+```
+
+SMTP2GO can return HTTP 200 with processing failures, so the example also checks
+its response body. With `fastaccept`, success means the provider accepted the
+message for background processing. Use provider delivery webhooks or logs to
+confirm arrival; Bifrost execution success alone does not prove delivery. See the
+[SMTP2GO send API](https://developers.smtp2go.com/reference/send-standard-email).
+
+## Emit the event
+
+Any workflow, form, app server route, or agent tool can request an email without
+knowing which provider is configured:
+
+```python
+from bifrost import events, workflow
+
+@workflow
+async def request_invoice_email(recipient: str, invoice_url: str):
+    """Queue an invoice-ready email through the topic workflow."""
+    await events.emit("email.send_requested", {
+        "to": [recipient],
+        "subject": "Your invoice is ready",
+        "body": f"Download your invoice here: {invoice_url}",
+    })
+    return {"queued": True}
+```
+
+`events.emit()` returns after publishing and queuing the event, without waiting
+for the sending workflow to finish. The sending workflow runs in its own
+organization scope, not the event source's scope. An organization-scoped workflow
+therefore reads that organization's configuration; a global workflow reads global
+configuration. To use a customer's sender, scope the sending workflow to that
+customer's organization. Check the source's delivery log and workflow execution
+history for processing status, and the provider's delivery records for arrival.
+
+## Why an event instead of a direct call
+
+The event boundary keeps the sender deployable and replaceable: one workflow owns the
+provider credentials and retry behavior, while callers only publish a message. It also
+matches the platform's current direction for built-in notifications such as
+`user.invited`.
+
+<Aside type="caution">
+The event body is not an email approval or an authenticated identity. Validate the
+recipient and content in the sending workflow, and do not put credentials in the
+event payload.
+</Aside>
+
+## Related
+
+- [Events](/docs/core-concepts/events/) — source types and built-in topics
+- [Subscribe a Workflow or Agent](/docs/how-to-guides/events/subscriptions/) — routing and filters
+- [Webhook & Event Variables](/docs/how-to-guides/events/webhook-variables/) — the `_event` payload
+- [Writing Workflows](/docs/how-to-guides/workflows/writing-workflows/) — workflow structure

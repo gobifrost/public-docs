@@ -1,0 +1,17 @@
+{
+  "policy": {
+    "warm_workers": 1,
+    "max_workers": 4,
+    "reserved_fast_path_workers": 1,
+    "auto_priority_app_workflows": false,
+    "worker_memory_mib": 2048,
+    "largest_worker_mib": 8192,
+    "idle_seconds": 300,
+    "isolated_jobs_enabled": false,
+    "max_isolated_pods": 2
+  },
+  "fast_path_ready_workers": 1,
+  "imported_from_env": {},
+  "unread_variables": [],
+  "job_types": []
+}

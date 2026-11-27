@@ -1,25 +1,44 @@
 ---
 title: Email Module
-description: SDK reference for sending emails via the platform's configured email workflow
+description: Deprecated SDK reference for the removed bifrost.email module
 ---
 
-The `email` module sends transactional email through the platform's configured email workflow. The platform admin must configure an email workflow under **Settings -> Email** before this works.
+import { Aside } from '@astrojs/starlight/components';
 
-## Import
+<Aside type="danger" title="Deprecated">
+The `bifrost.email` module was removed in [Bifrost PR #273](https://github.com/gobifrost/bifrost/pull/273), before **v1.0.0**, along with **Settings → Email**
+and `POST /api/email/send`. Both **v1.0.0** and **v1.0.5** already lack these features. It is not part of current main and will not work on a
+current Bifrost instance.
+
+Use an event-driven workflow with your own email provider instead. See
+[Sending Email](/docs/how-to-guides/workflows/sending-email/).
+</Aside>
+
+This page is retained as a historical reference for revisions before that removal.
+Do not use it for new work.
+
+## Historical reference (before removal)
+
+The `email` module sent transactional email through the platform's configured email
+workflow. A platform admin had to configure an email workflow under **Settings → Email**
+before it worked.
+
+### Import
 
 ```python
 from bifrost import email
 ```
 
-## Method Index
+### Method Index
 
 | Method | Returns | Description |
 |--------|---------|-------------|
 | `email.send()` | `dict` | Send a plain-text or HTML email |
 
-## email.send()
+### email.send()
 
-Send an email through the configured email workflow. Resolves the current execution scope automatically.
+Sent an email through the configured email workflow and resolved the current
+execution scope automatically.
 
 ```python
 async def send(
@@ -37,13 +56,13 @@ async def send(
 | `body` | str | Plain-text body |
 | `html_body` | str \| None | Optional HTML body |
 
-Returns a dict with:
+Returned a dict with:
 
 | Key | Type | Description |
 |-----|------|-------------|
 | `success` | bool | Whether the email was queued/sent successfully |
 | `execution_id` | str \| None | Execution ID of the underlying email workflow |
-| `error` | str \| None | Error message when `success` is `False` |
+| `error` | str \| None | Error message when `success` was `False` |
 
 ### Example
 

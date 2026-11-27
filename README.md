@@ -13,6 +13,8 @@ npm ci
 npm run dev
 ```
 
+Open [the local documentation preview](http://127.0.0.1:4321/docs/about/). The standalone preview redirects its home page to the docs; the combined website keeps its own home page.
+
 Before opening a pull request, run:
 
 ```sh

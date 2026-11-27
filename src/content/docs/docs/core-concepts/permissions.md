@@ -1,118 +1,97 @@
 ---
 title: "Permissions & Roles"
-description: "How access control works across forms, workflows, agents, apps, and admin surfaces."
+description: "How roles, organization reach, run identities, and workflow permissions work together."
 ---
 
-Bifrost gates every executable surface — forms, workflows, agents, and apps — with the same two-axis model: an **`access_level`** column on the entity and an optional **roles** binding. Tables, knowledge, integrations, and other admin surfaces are platform-admin-only by default and follow a separate model described at the bottom of this page.
+Bifrost checks both who may launch something and what its automation may do.
+Access to an app, form, or agent does not grant unrestricted access to tables,
+files, secrets, or integrations.
 
-## The model in one paragraph
+## Roles and Organization Reach
 
-Every form, workflow, agent, and app stores an `access_level` enum and a list of roles. `authenticated` means any signed-in user can access it. `role_based` means the user must hold at least one of the bound roles, or be a platform admin. Roles are simple labels created in **Settings → Roles** and assigned to users — there is no `PlatformAdmin` or `OrgUser` synthetic role; platform-admin status is a column flag on the user, not a role string.
+Roles grant named permissions. Their organization or platform boundaries determine
+where those permissions apply. People and custom identities have a base role and
+may have additional role assignments. Built-in roles are read-only; custom roles
+let you define permissions for your own responsibilities.
 
-## The Roles page
+Manage roles from **Roles** and assignments from **Users**. A provisioning default
+chooses the base role for new accounts; changing that default does not rewrite
+existing assignments. See [Base Role Defaults](/docs/how-to-guides/operations/base-role-defaults).
 
-The **Roles** page lists every role alongside a row of consumer-count chips — one per consumer type: users, forms, agents, apps, workflows, and knowledge namespaces. Each chip shows how many entities of that type the role currently grants, so you can see a role's blast radius at a glance.
+![Roles list](../../../../assets/public-docs/permissions/roles-list.png)
 
-![Roles list with consumer-count chips](../../../../assets/public-docs/permissions/roles-list.png)
+## Discovering and Launching Resources
 
-Click a chip to deep-link straight into that role's detail page on the matching tab — clicking the **Forms** chip opens the role scoped to its assigned forms, where you can assign, unassign, or bulk-remove consumers. The role name and row both link to the same detail view on its default tab.
-
-A role's chips reflect its reach, not a permission grant by themselves. A count of zero means nothing of that type is bound yet; the role still exists and can be assigned later.
-
-## Forms
-
-Forms control submission access via `FormAccessLevel`:
-
-| `access_level` | Who can submit |
-|----------------|----------------|
-| `authenticated` | Any signed-in user in the org |
-| `role_based` | Users whose roles intersect the form's `roles` list, plus platform admins |
-
-`role_based` with an **empty** `roles` list collapses to "platform admin only" — useful for forms that should remain hidden until rolled out.
-
-The picker UI lives on the form-edit screen:
+An entity's access level, role bindings, and organization scope determine who can
+see or launch it. Configure these on the form, workflow, agent, or app rather than
+relying on a hidden button in a frontend.
 
 ![Form access settings](../../../../assets/public-docs/permissions/form-picker.png)
 
-Because forms are the discovery surface for end users, this is the most common place a non-admin user encounters access control. Workflow access is enforced again at execution time, so a misconfigured form cannot escalate workflow privileges.
+Chat has its own permission. Access to an agent alone does not grant access to the
+Chat surface. An app or form calling a workflow also passes through the workflow's
+execution checks.
 
-## Workflows
-
-Workflows store `access_level` directly on the workflow record. The default for new workflows is `authenticated`, so registering a workflow without setting permissions makes it callable by every signed-in user of the org. Use `role_based` to restrict execution to specific roles.
-
-You can also gate sensitive logic *inside* the workflow body using the execution context:
-
-```python
-from bifrost import workflow
-from bifrost._execution_context import ExecutionContext
-
-@workflow(name="delete_user")
-async def delete_user(context: ExecutionContext, user_id: str):
-    if not context.is_platform_admin:
-        raise PermissionError("Only platform admins can delete users")
-    # ...
-```
-
-`context.is_platform_admin` is a boolean on every execution context. `access_level` enforcement happens at the launch boundary; the in-body check is for second-line defense or for branching behavior on caller identity. Configure the workflow's access level in the workflow settings or API, not in the decorator.
-
-![Workflow access settings](../../../../assets/public-docs/permissions/workflow-picker.png)
-
-## Agents
-
-Agents add a third value to the enum: `private`. The full set is:
-
-| `access_level` | Behavior |
-|----------------|----------|
-| `authenticated` | Any signed-in user can chat with the agent |
-| `role_based` | Visibility limited to users whose roles intersect the agent's `roles` |
-| `private` | Hidden from user-facing surfaces; only callable by other agents (delegation) or by autonomous schedules |
-
-When the platform resolves a chat request, agents whose access does not match are filtered out of the picker entirely — they're invisible, not greyed out. Tools an agent can call are governed separately by the underlying workflow's `access_level`.
+Set an agent’s launch visibility and role bindings in its access settings. Tool calls still use the underlying workflows’ execution permissions.
 
 ![Agent access settings](../../../../assets/public-docs/permissions/agent-picker.png)
 
-## Apps
-
-App access maps to the same enum forms use (`authenticated` or `role_based`) plus a `roles` list. App permissions gate **rendering** — a user without access to an app does not see it in the launcher or load its bundle.
-
-Inside an app, use the platform `useUser()` hook or the `<RequireRole>` component to branch on role membership:
-
-```tsx
-import { useUser, RequireRole, Button } from "bifrost";
-
-export default function ExpensesApp() {
-    const user = useUser();
-
-    return (
-        <div>
-            <h1>Welcome, {user.name}</h1>
-
-            <RequireRole role="Finance">
-                <Button onClick={() => approveAll()}>Approve all pending</Button>
-            </RequireRole>
-
-            {user.hasRole("Admin") && <SettingsLink />}
-        </div>
-    );
-}
-```
-
-`user.roles` is a `string[]` of role names. `user.hasRole(name)` returns a boolean. `<RequireRole>` renders its children only when the user holds the named role and accepts an optional `fallback` prop.
-
-Backend access is unaffected: an app calling a workflow still goes through the workflow's `access_level` check.
+App access controls entry to the app; platform checks still apply to the operations it invokes.
 
 ![App access settings](../../../../assets/public-docs/permissions/app-picker.png)
 
-## Tables, Knowledge, Integrations
+## Run Users and Acting Identities
 
-These surfaces do not carry a per-entity `access_level`. They are managed in **Settings** by platform admins, and the SDK exposes them read/write to any workflow or app the calling user can already reach. Per-org isolation is enforced through scope (see [Scopes](/docs/core-concepts/scopes/)), not through role bindings.
+A run records its original user separately from its acting identity. **Run As**
+changes who performs the action and receives its attribution; the original run
+user's current roles and organization reach still decide whether it is allowed.
+An acting identity cannot enlarge that reach.
 
-If you need per-role data partitioning inside a table, model it in the workflow logic that reads the table — there is no row-level RBAC at the platform layer.
+Unattended workflows, agents, and services need a selected identity. Manage
+reusable custom identities under **Users → Identities**, then select the appropriate
+identity for the automation. A person's platform-admin status is not a substitute
+for the run's permission checks.
 
-## Best practices
+## Workflow Access Modes
 
-- **Start with `authenticated`.** Add `role_based` only when an action is genuinely sensitive (deleting data, approving spend, viewing PII).
-- **Use named roles from your org chart**, not numbered or generic names. `Finance Approver` is searchable; `Group A` is not.
-- **Keep the role count small.** 3-5 roles works for most orgs. Adding a role per workflow becomes unmaintainable.
-- **Don't rely on UI hiding alone.** If a workflow truly must not run, set `access_level=role_based` on the workflow itself — gating the form is necessary but not sufficient.
-- **Platform admins bypass `role_based` everywhere.** That's intentional: admins must be able to debug. Use `private` on agents or in-body `is_platform_admin` checks if you need to surface that someone is acting as admin.
+The workflow **Access** panel shows its effective mode:
+
+| Mode | Permissions added to the run user's roles |
+|---|---|
+| **Full Access** | Every named permission, including Secrets, within the run user's organization reach. |
+| **Declared Permissions** | Only the workflow's configured permissions, within the same reach. |
+
+Full Access remains the platform default. Upgrading to 2.0 does not automatically
+convert existing workflows to Declared Permissions.
+
+Table and file policies still apply in either mode. Role conditions use the
+original run user's own membership. Agents and inline scripts add no workflow
+permissions. Solution outbound-access settings separately control network access.
+
+![Workflow access settings](../../../../assets/public-docs/permissions/workflow-picker.png)
+
+The [workflow conversion tool](/docs/how-to-guides/workflows/converting-permissions)
+can suggest declared permissions from code and recorded usage. Review uncertainties
+and test normal execution paths before applying a narrower declaration. Its
+analysis does not run workflows or prove their business behavior.
+
+## Solution Permission Requests
+
+A Solution declares each workflow's requested access mode and permission
+capabilities. An administrator approves the request for that installation.
+Changed requests require approval again; revoked or stale approvals add no
+capabilities. Explicit Declared Permissions requests cannot inherit Full Access
+from the platform default.
+
+These capabilities add no organizations to the run user's reach. Existing Full
+Access installs retain their mode until explicitly restricted.
+
+## Checking Access
+
+Use **Auditing → Access Checks** to inspect refusals and selected policy and
+secret decisions. Successful named-permission checks are omitted, so this log is
+evidence rather than a complete inventory of a workflow's needs.
+
+Configure roles, reach, entity access, and workflow permissions together. Frontend
+visibility and in-body checks can improve the experience, while platform checks
+remain the authorization boundary.

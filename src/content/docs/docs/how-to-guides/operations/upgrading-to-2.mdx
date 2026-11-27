@@ -1,0 +1,68 @@
+---
+title: Upgrade From 1.4.1 to 2.0
+description: Update an existing installation directly and verify its data, workflows and Apps
+---
+
+Update directly from 1.4.1 using the normal image update. No intermediate image
+or manual database step is required. People may need to sign in again in
+browsers, the CLI and MCP clients. Passwords, MFA enrollments, passkeys and
+stored integration credentials are retained.
+
+Existing supported SDK2 Apps keep working without a rebuild. Retiring the
+scheduler or RabbitMQ and adding workers are separate, optional changes.
+
+## Before Updating
+
+- Back up PostgreSQL and object storage together. Record the running image
+  versions and preserve the platform secret that protects encrypted credentials.
+- Keep RabbitMQ, its data, Redis and the existing broker URL available while
+  queued work recovers. Do not delete queues or replay poison messages as part
+  of the image update.
+- Plan the API replacement. For multiple API replicas or separately exposed MCP
+  endpoints, follow the [Human Authentication Cutover](https://github.com/gobifrost/bifrost/blob/e7c95328aa87bc3a9313ca05c694b5e8c02f0a4a/docs/runbooks/human-auth-cutover.md)
+  procedure. The old and new human validators must not remain reachable together
+  after cutover; a database migration alone does not replace the serving fleet.
+
+## Update the Images
+
+1. Select the release's API and client images. Use the API image for init,
+   API, worker and scheduler services, preserving their existing data and
+   deployment configuration.
+2. Run the normal init service to apply forward migrations, then complete the
+   image update. Verify every serving API and MCP endpoint runs the selected
+   build.
+3. Sign in again if prompted. Separately installed CLI clients must meet the
+   API's minimum version; use `bifrost update` to install the API-matched CLI,
+   then sign in. Reconnect MCP clients and refresh their tool discovery.
+4. Verify API readiness, an ordinary workflow using an existing integration,
+   and an existing App with live data. Check recovered executions for failures
+   before considering the update complete.
+
+The API automatically recovers supported work queued by the earlier release.
+An expired or missing Redis context can leave an old run visibly failed; a
+broker-drain record does not prove that every run succeeded. Account for all
+queues and unacknowledged messages before any later broker retirement.
+
+## Optional App SDK Updates
+
+A platform update does not require an SDK rebuild for supported SDK2 Apps,
+even when retained source is unavailable. Their original bundles can renew
+live subscriptions through the current host session.
+
+To receive newer SDK features, use [Update Deployed App SDKs](/docs/how-to-guides/apps/updating-deployed-sdks/).
+Automatic updates are opt-in under **Maintenance → App SDK Upgrades** and need
+eligible retained source. A failed rebuild leaves the existing deployment active.
+
+## Optional Runtime Cleanup
+
+The unchanged scheduler runs as another executor on the current image. You may
+retire it, remove RabbitMQ after recovery, or adjust worker replicas and memory
+as separate operations. These are not prerequisites for the image update.
+
+## Recovery
+
+Keep the new authentication validator when applying a repair build. Rolling
+back below the human-authentication cutover is unsupported. Preserve the
+platform secret; rotating it also affects stored encrypted credentials.
+See [Authority Epoch](https://github.com/gobifrost/bifrost/blob/e7c95328aa87bc3a9313ca05c694b5e8c02f0a4a/docs/runbooks/authz-epoch.md)
+for trigger-disabling maintenance and backup-restore rules.

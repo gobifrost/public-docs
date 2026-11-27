@@ -33,6 +33,12 @@ npm run build
 
 Describe the commands you ran and their results in the pull request. If a check cannot run, explain why and state the remaining uncertainty.
 
+## Contribution licensing
+
+Submit material you own or have permission to contribute. Your original prose and screenshots are contributed under CC BY 4.0; original example code and tooling are contributed under MIT. Existing file-specific licenses and third-party notices still apply. Preserve those notices and identify any imported material in the PR.
+
+See [NOTICE.md](NOTICE.md), [LICENSE](LICENSE), and [LICENSE-CODE](LICENSE-CODE) for the scope and terms. These documentation licenses do not change the Bifrost application's AGPL license.
+
 ## Review and merge
 
 External pull requests need maintainer review before merge. Maintainer-authored changes still go through a pull request and the same required checks. Request independent review for changes to build, licensing, or publication behavior.
