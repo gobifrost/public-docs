@@ -129,6 +129,21 @@ if mapping:
     print(f"Entity: {mapping.entity_id}, Config: {mapping.config}")
 ```
 
+### integrations.find_mapping()
+
+Find a mapping by exact external entity ID among the mappings the caller can read.
+
+```python
+async def find_mapping(
+    name: str,
+    entity_id: str,
+    *,
+    instance: str | None = None,
+) -> IntegrationMappingFindResult | None
+```
+
+The result status is `unique`, `ambiguous`, or `not_found_in_authorized_scope`. Only a unique result includes a mapping. A miss describes the caller’s authorized scope.
+
 ### integrations.upsert_mapping()
 
 Create or update an organization mapping for an integration.

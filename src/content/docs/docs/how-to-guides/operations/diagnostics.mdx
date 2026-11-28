@@ -45,6 +45,10 @@ Workers take work by memory, not by a fixed number of slots, so the fork count r
 
 The badge next to the **Live** indicator shows the executions waiting for a worker with room. A small backlog (single digits) is normal during bursts. Sustained double-digit backlogs mean your workers don't have enough memory for the incoming rate — add workers, give them more memory, or look for a slow workflow.
 
+### Worker instances
+
+The **Worker Instances** table lists running workers and recent stopped instances. Check **Build** after a rollout to see the version each worker reports. Filter by worker type to focus on static or externally provisioned workers. Stopped instances show the recorded stop reason when one is available.
+
 ### Memory chart
 
 ![Memory chart pane](../../../../../assets/public-docs/operations/diagnostics-memory-chart.png)

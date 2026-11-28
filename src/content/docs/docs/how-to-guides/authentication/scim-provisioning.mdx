@@ -11,7 +11,7 @@ Use a SCIM connection to provision users and apply group-based access in one Bif
 4. Edit the group’s mapping and select the Bifrost roles its members should receive. Choose **Access Only** if the group should grant access without a role.
 5. Verify the pilot user appears in **Users** with the expected access. Remove the user from the mapped group in the directory and verify that the group’s grants are revoked after the directory sends the update.
 
-Once the connection has a group mapping, provisioned users need membership in at least one mapped group to retain access. Grants may take up to two minutes to appear after Bifrost receives them. Privileged roles must be assigned directly in Bifrost.
+Once the connection has a group mapping, provisioned users need membership in at least one mapped group to retain access. Bifrost applies grants on its two-minute access pass. Privileged roles must be assigned directly in Bifrost.
 
 ### SCIM reference
 

@@ -1,5 +1,10 @@
 {
   "id": "aaaa1111-1111-1111-1111-111111111111",
+  "definition_id": "aaaa1111-1111-1111-1111-111111111111",
+  "instance_key": "default",
+  "instance_name": "Default",
+  "is_default_instance": true,
+  "authentication_method": "oauth",
   "name": "Microsoft_Graph",
   "list_entities_data_provider_id": null,
   "config_schema": [],
