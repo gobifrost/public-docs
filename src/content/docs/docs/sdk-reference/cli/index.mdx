@@ -13,11 +13,14 @@ Refs (organization, role, integration, workflow, etc.) accept either a UUID or a
 |---------|-------------|---------|
 | `bifrost login [--url <api-url>]` | Authenticate via device authorization (browser flow). | `bifrost login --url https://app.gobifrost.com` |
 | `bifrost login --no-browser` | Same flow but print the URL instead of opening it. | `bifrost login -n` |
+| `bifrost login --oidc --audience <audience>` | Request a GitHub Actions OIDC assertion and exchange it with Bifrost. | `bifrost login --oidc --audience "$BIFROST_ASSERTION_AUDIENCE"` |
+| `bifrost login --managed-identity --audience <resource>` | Request an Azure managed identity token for the resource. Add `--managed-identity-client-id` to select a user-assigned identity. | `bifrost login --managed-identity --audience "api://$RESOURCE_APP_ID"` |
+| `bifrost login --subject-token-file <path> --subject-token-type <type>` | Exchange an external `id_token` or `access_token`. Use `-` to read the assertion from stdin. | `bifrost login --subject-token-file assertion.jwt --subject-token-type access_token` |
 | `bifrost update [--url <api-url>]` | Update this CLI from the active or selected Bifrost instance. Works even when the installed CLI fails the contract-version gate. | `bifrost update` |
 | `bifrost auth list` | List saved connections and show which one is selected. | `bifrost auth list` |
 | `bifrost logout` | Remove credentials for the current or selected connection. | `bifrost logout` |
 
-Tokens refresh automatically and are stored in the system credential manager when available, with a platform-specific file fallback. A workspace `.env` can set `BIFROST_API_URL` to select its connection.
+Human login tokens refresh automatically and are stored in the system credential manager when available, with a platform-specific file fallback. Workload login returns a short-lived access token. Run the login command again after it expires. For GitHub or Azure, `--audience` selects what the provider issues. Bifrost matches the actual signed audience against the configured federated credential. See [Workload Federation](/docs/how-to-guides/authentication/workload-federation/). A workspace `.env` can set `BIFROST_API_URL` to select its connection.
 
 ## Sync and files
 
@@ -112,6 +115,10 @@ Use singular `bifrost app` for the local lifecycle of an independent V2 App repo
 | `bifrost integrations update <ref> [--config-schema ...] [--force-remove-keys]` | Update; refuses key removal without `--force-remove-keys` (cascades). | `bifrost integrations update halopsa --config-schema @halopsa-v2.yaml` |
 | `bifrost integrations add-mapping <integration-ref> --organization <ref> --entity-id <id> [--oauth-token-id ...]` | Bind an integration to an org with the external entity_id. | `bifrost integrations add-mapping halopsa --organization acme --entity-id 12345` |
 | `bifrost integrations update-mapping <integration-ref> --organization <ref> [--entity-id ...] [--oauth-token-id ...]` | Update an existing mapping. | `bifrost integrations update-mapping halopsa --organization acme --entity-id 67890` |
+| `bifrost integrations list-instances <definition-ref>` | List an integration’s connection instances. | `bifrost integrations list-instances AWS` |
+| `bifrost integrations create-instance <definition-ref> --name <name> --key <key> [--authentication-method config\|oauth]` | Add a connection with a stable instance key. | `bifrost integrations create-instance AWS --name PBXs --key pbxs --authentication-method config` |
+| `bifrost integrations update-instance <definition-ref> <instance-id> [--name <name>]` | Rename a connection by UUID. | `bifrost integrations update-instance AWS "$INSTANCE_ID" --name Telephony` |
+| `bifrost integrations delete-instance <definition-ref> <instance-id>` | Delete a named connection by UUID. | `bifrost integrations delete-instance AWS "$INSTANCE_ID"` |
 
 ## Events
 

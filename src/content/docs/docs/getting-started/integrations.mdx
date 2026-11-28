@@ -71,17 +71,20 @@ An integration with Microsoft Graph that reads user information using OAuth.
     - **Organization**: Global, or scoped to a specific organization
     - **Name**: Microsoft_Graph
     - **Description**: Microsoft Graph API connection
+    - **Authentication**: OAuth
 
     You can skip Entity Data Provider for now. For Default Entity ID, you can use `common`.
 
-1. Configure OAuth:
+1. Select **Create Integration**. On the integration page, open the **OAuth** status control and select **Set Up OAuth**.
+
+1. In the OAuth dialog, enter the following.
 
     - **OAuth Flow Type**: Authorization Code (Interactive)
     - **Client ID**: The Client ID you copied earlier
     - **Client Secret**: The Client Secret you copied earlier
     - **Authorization URL**: The OAuth 2.0 authorization endpoint (v2)
 
-        Our token and authorization URL incldue `{entity_id}` to demonstrate the templating engine. This will be replaced with `common`, but you can also just use `common` directly here and not specify a Default Entity ID.
+        Use `{entity_id}` in both endpoint URLs to substitute your Default Entity ID. You can also enter `common` directly in the URLs.
 
     - **Token URL**: The OAuth 2.0 token endpoint (v2)
     - **Scope**: offline_access Directory.Read.All
@@ -91,10 +94,9 @@ An integration with Microsoft Graph that reads user information using OAuth.
         re-authentication.
     </Aside>
 
-    ![alt text](../../../../assets/public-docs/integrations/image-8.png)
+    ![OAuth connection settings for the Default instance](../../../../assets/public-docs/integrations/image-8.png)
 
-1. Click **Save**
-1. Copy the Redirect URI at the top and update your App Registration.
+1. Copy the **Redirect URI** into your app registration and select **Create Connection** in Bifrost.
 
 </Steps>
 
@@ -102,7 +104,7 @@ An integration with Microsoft Graph that reads user information using OAuth.
 
 <Steps>
 
-1. Click **Connect** on your integration
+1. Open the **OAuth** status control on your integration and select **Connect**.
 
 1. Sign in with Microsoft and consent to permissions
 

@@ -29,6 +29,8 @@ Microsoft-specific sources use the webhook adapter layer. See [Microsoft event s
 
 Bifrost ships a curated registry of topic strings (for example `user.invited`) alongside any topics already in use. When you create a topic source, the picker draws from this registry so subscriptions stay consistent across the platform. A topic source carries its `event_type` string under its name in the list, making the broadcast it listens for explicit.
 
+Bifrost reserves built-in topics for platform emitters. Workflows can subscribe to these topics. Calls to `events.emit()` and `POST /api/events/emit` return HTTP 400 for a built-in topic. Before upgrading, move any custom emitters and their corresponding subscriptions to your own topic, such as `acme.user_invited`. See the [built-in topic reference](https://github.com/gobifrost/bifrost/blob/354092cd9c7d7455aabc7120a59fc78fec73c466/docs/events/topics.md) for topic names and payloads.
+
 ## Where to learn more
 
 <LinkCard

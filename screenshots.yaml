@@ -310,8 +310,8 @@ entries:
       type: explanation
       heading: What Are Integrations?
     captured_at:
-      bifrost_sha: 4b8c2b224eefd39caa134de16d728b9fbd8bfaa7
-      timestamp: '2026-11-07T01:34:13.129Z'
+      bifrost_sha: 55bdecbd9e25eab032ef5fd5ccdfcbe47c13f767
+      timestamp: '2026-11-28T16:04:18.876Z'
   - id: core-concepts-dashboard
     image: src/assets/public-docs/core-concepts/dashboard.png
     route: /dashboard
@@ -520,28 +520,39 @@ entries:
           fixture: fixtures/integrations-list-with-graph.json
         - url: '**/api/integrations/aaaa1111-1111-1111-1111-111111111111'
           fixture: fixtures/integration-detail-graph.json
+        - url: '**/api/integrations/aaaa1111-1111-1111-1111-111111111111/instances'
+          body:
+            instances:
+              - id: aaaa1111-1111-1111-1111-111111111111
+                definition_id: aaaa1111-1111-1111-1111-111111111111
+                key: default
+                name: Default
+                is_default: true
+                authentication_method: oauth
+                has_oauth_config: true
         - url: '**/api/oauth/connections/aaaa1111-1111-1111-1111-111111111111'
           fixture: fixtures/oauth-connection-graph.json
         - url: '**/api/organizations'
           body: []
       actions:
-        - wait_for: >-
-            [data-slot="card"]:has([data-slot="card-description"]:has-text("Connection status and authentication"))
-            button[aria-haspopup="menu"]
-        - click: >-
-            [data-slot="card"]:has([data-slot="card-description"]:has-text("Connection status and authentication"))
-            button[aria-haspopup="menu"]
-        - wait_for: '[role="menuitem"]:has-text("Edit Configuration")'
-        - click: '[role="menuitem"]:has-text("Edit Configuration")'
+        - wait_for: button[aria-label^="Default OAuth:"]
+        - click: button[aria-label^="Default OAuth:"]
+        - wait_for: button:text-is("Edit")
+        - click: button:text-is("Edit")
         - wait_for: '[role="dialog"]:has-text("Edit OAuth Connection")'
         - wait_ms: 300
+      crop:
+        x: 256
+        'y': 0
+        width: 930
+        height: 900
     diataxis:
       page: src/content/docs/docs/getting-started/integrations.mdx
       type: tutorial
       heading: Create Integration in Bifrost
     captured_at:
-      bifrost_sha: 4b8c2b224eefd39caa134de16d728b9fbd8bfaa7
-      timestamp: '2026-11-07T01:34:13.799Z'
+      bifrost_sha: 55bdecbd9e25eab032ef5fd5ccdfcbe47c13f767
+      timestamp: '2026-11-28T16:07:14.455Z'
   - id: integrations-image-7
     image: src/assets/public-docs/integrations/image-7.png
     route: /integrations
@@ -566,8 +577,8 @@ entries:
       type: tutorial
       heading: Authorize the Connection
     captured_at:
-      bifrost_sha: 4b8c2b224eefd39caa134de16d728b9fbd8bfaa7
-      timestamp: '2026-11-07T01:34:13.896Z'
+      bifrost_sha: 55bdecbd9e25eab032ef5fd5ccdfcbe47c13f767
+      timestamp: '2026-11-28T16:04:19.013Z'
   - id: creating-forms-image-3
     image: src/assets/public-docs/creating-forms/image-3.png
     route: /forms/new
@@ -860,8 +871,8 @@ entries:
       type: how-to
       heading: Open the dashboard
     captured_at:
-      bifrost_sha: 4b8c2b224eefd39caa134de16d728b9fbd8bfaa7
-      timestamp: '2026-11-07T01:34:14.680Z'
+      bifrost_sha: 55bdecbd9e25eab032ef5fd5ccdfcbe47c13f767
+      timestamp: '2026-11-28T16:04:19.151Z'
   - id: operations-diagnostics-memory-chart
     image: src/assets/public-docs/operations/diagnostics-memory-chart.png
     route: /diagnostics
@@ -1786,8 +1797,8 @@ entries:
         - wait_for: role=heading[name="Users"][level=1]
         - wait_for: td:has-text("dana@acme-msp.com")
     captured_at:
-      bifrost_sha: a0f838bd6fe2c8bc8177b358902ac99a808a40d1
-      timestamp: '2026-11-07T01:38:55.517Z'
+      bifrost_sha: 55bdecbd9e25eab032ef5fd5ccdfcbe47c13f767
+      timestamp: '2026-11-28T16:04:19.299Z'
   - id: core-concepts-organizations
     image: src/assets/public-docs/core-concepts/organizations.png
     route: /organizations

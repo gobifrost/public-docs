@@ -1,0 +1,19 @@
+---
+title: How to Add a Named Integration Instance
+description: Add a separate connection for another account and select it explicitly from a workflow.
+---
+
+1. Open the integration. From the **Default** instance menu, choose **Add Instance**.
+2. Enter an **Instance Name** and a stable **Instance Key**, such as `pbxs`. The name can change later. Choose **OAuth** or **API Key / Custom Credentials**, then select **Add Instance**.
+3. Select the new instance and configure its credentials and defaults. Add any organization mappings for that connection. Each instance starts with empty values and uses the integration’s shared configuration schema.
+4. Pass the instance key in the workflow and verify that a read returns data from the intended account.
+
+```python
+from bifrost import integrations
+
+connection = await integrations.get("AWS", instance="pbxs")
+```
+
+Existing workflows continue to use **Default** when they omit the selector. A missing named instance raises an error by default. See the [Integrations SDK reference](/docs/sdk-reference/sdk/integrations-module/#integrationsget) for selector and fallback behavior.
+
+Complete the application upgrade across all processes before creating named instances. A database downgrade is blocked after named instances exist, including soft-deleted instances.

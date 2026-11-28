@@ -394,6 +394,10 @@ export default {
                                     label: "Custom REST APIs",
                                     slug: "docs/how-to-guides/integrations/creating-integrations",
                                 },
+                                {
+                                    label: "Named Integration Instances",
+                                    slug: "docs/how-to-guides/integrations/named-instances",
+                                },
                             ],
                         },
                         {
@@ -449,6 +453,14 @@ export default {
                                     slug: "docs/how-to-guides/authentication/sso",
                                 },
                                 {
+                                    label: "SCIM Provisioning",
+                                    slug: "docs/how-to-guides/authentication/scim-provisioning",
+                                },
+                                {
+                                    label: "Workload Federation",
+                                    slug: "docs/how-to-guides/authentication/workload-federation",
+                                },
+                                {
                                     label: "Passkeys (WebAuthn)",
                                     slug: "docs/how-to-guides/authentication/passkeys",
                                 },
@@ -499,6 +511,10 @@ export default {
                                 {
                                     label: "Independent App Development",
                                     slug: "docs/how-to-guides/apps/independent-apps",
+                                },
+                                {
+                                    label: "Embed an App with Sign-In",
+                                    slug: "docs/how-to-guides/apps/authenticated-embeds",
                                 },
                                 {
                                     label: "Update Deployed App SDKs",

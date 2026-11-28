@@ -1,0 +1,18 @@
+---
+title: How to Embed an App with Bifrost Sign-In
+description: Let users open a published Bifrost App inside an approved site and sign in with their own account.
+---
+
+1. Publish the App and give the intended users access.
+2. In **Settings → Security → App Embedding**, add the host site under **Allowed Embed Origins** and select **Save Changes**. Enter the exact origin, such as `https://helpdesk.example.com`, without a page path.
+3. Set the host site’s iframe or custom tab URL to `https://bifrost.example.com/embedded/apps/your-app-slug`. Use your Bifrost hostname and the published App’s slug.
+4. Open the tab as an intended user. Select **Sign In to Bifrost** and complete sign-in in the new window. Confirm that the App opens in the tab with that user’s access. If the window cannot open, allow popups for the site and try again.
+
+### Embed URL reference
+
+| Path | Authentication |
+| --- | --- |
+| `/embedded/apps/{slug}` | Bifrost sign-in from an allowlisted origin. The frame receives a separate revocable session. |
+| `/embed/apps/{slug}` | Existing signed HMAC entry point. |
+
+Origins include the scheme, host, and port when non-default. Allow each origin separately. Clearing the allowlist disables frame sign-in.

@@ -21,6 +21,10 @@ Get integration configuration with OAuth tokens.
 async def get(
     name: str,
     scope: str | None = None,
+    oauth_scope: str | None = None,
+    *,
+    instance: str | None = None,
+    on_missing: Literal["fail", "default"] = "fail",
 ) -> IntegrationData | None
 ```
 
@@ -30,6 +34,9 @@ async def get(
 |-----------|------|-------------|
 | `name` | str | Integration name (e.g., "HaloPSA", "Microsoft_Graph") |
 | `scope` | str \| None | Organization scope (see below) |
+| `oauth_scope` | str \| None | Request a fresh token with a different scope in a client credentials flow. |
+| `instance` | str \| None | Stable instance key. Omit to use the Default connection. |
+| `on_missing` | `"fail"` or `"default"` | A missing named instance returns a 404 by default. Use `"default"` to explicitly use Default if that instance key is absent. |
 
 **Scope parameter:**
 - *(omitted)* (default): Use execution context's org, with automatic global fallback via cascade
@@ -38,9 +45,11 @@ async def get(
 
 > **Note:** Targeting a specific org via UUID requires provider org context. Managed orgs can only access their own scope. Use `context.set_scope()` to override scope for all calls at once.
 
+Bifrost resolves organization mappings and configuration defaults within the selected instance. Permission, credential, and OAuth errors still propagate when `on_missing="default"`.
+
 #### Returns
 
-`IntegrationData` object or `None` if not found.
+`IntegrationData` includes the selected connection’s `instance_key`. If the integration definition is absent, the call returns `None` unless the executing Solution declares the integration as required. In that case it returns a 424 error.
 
 #### Example
 
@@ -57,12 +66,19 @@ if integration:
     entity = integration.entity_id
 ```
 
+For setup steps, see [Add a Named Integration Instance](/docs/how-to-guides/integrations/named-instances/).
+
 ### integrations.list_mappings()
 
-List all organization mappings for an integration.
+List the organization mappings the caller can read for an integration instance. The optional `scope` argument is accepted for compatibility. Mapping methods use the Default connection when `instance` is omitted.
 
 ```python
-async def list_mappings(name: str) -> list[IntegrationMappingResponse] | None
+async def list_mappings(
+    name: str,
+    scope: str | None = None,
+    *,
+    instance: str | None = None,
+) -> list[IntegrationMappingResponse] | None
 ```
 
 #### Example
@@ -83,6 +99,8 @@ async def get_mapping(
     name: str,
     scope: str | None = None,
     entity_id: str | None = None,
+    *,
+    instance: str | None = None,
 ) -> IntegrationMappingResponse | None
 ```
 
@@ -111,6 +129,21 @@ if mapping:
     print(f"Entity: {mapping.entity_id}, Config: {mapping.config}")
 ```
 
+### integrations.find_mapping()
+
+Find a mapping by exact external entity ID among the mappings the caller can read.
+
+```python
+async def find_mapping(
+    name: str,
+    entity_id: str,
+    *,
+    instance: str | None = None,
+) -> IntegrationMappingFindResult | None
+```
+
+The result status is `unique`, `ambiguous`, or `not_found_in_authorized_scope`. Only a unique result includes a mapping. A miss describes the caller’s authorized scope.
+
 ### integrations.upsert_mapping()
 
 Create or update an organization mapping for an integration.
@@ -122,6 +155,8 @@ async def upsert_mapping(
     entity_id: str,
     entity_name: str | None = None,
     config: dict | None = None,
+    *,
+    instance: str | None = None,
 ) -> IntegrationMappingResponse
 ```
 
@@ -154,7 +189,9 @@ Delete an organization mapping for an integration.
 ```python
 async def delete_mapping(
     name: str,
-    scope: str,            # Required
+    scope: str,
+    *,
+    instance: str | None = None,
 ) -> bool
 ```
 
@@ -178,6 +215,8 @@ deleted = await integrations.delete_mapping("HaloPSA", scope="org-123")
 ```python
 class IntegrationData(BaseModel):
     integration_id: str
+    definition_id: str | None = None
+    instance_key: str | None = None
     entity_id: str | None        # External entity ID (tenant, company, etc.)
     entity_name: str | None      # Display name for entity
     config: dict                  # Merged configuration (defaults + org overrides)
@@ -219,6 +258,8 @@ This is useful when a provider's tokens expire before their stated `expires_in` 
 class IntegrationMappingResponse(BaseModel):
     id: str
     integration_id: str
+    definition_id: str | None = None
+    instance_key: str | None = None
     organization_id: str
     entity_id: str | None
     entity_name: str | None

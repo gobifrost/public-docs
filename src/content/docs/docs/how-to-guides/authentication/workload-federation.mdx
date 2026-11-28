@@ -1,0 +1,19 @@
+---
+title: How to Sign In a GitHub Actions Job with Workload Federation
+description: Exchange a GitHub Actions OIDC assertion for a short-lived token tied to a Bifrost Identity.
+---
+
+1. Open **Users → Identities** and select a non-human Identity with the roles and organization access the job needs.
+2. Under **Federated Credentials**, select **New Federated Credential**. Choose **ID Token (Including GitHub Actions)** and enter the exact issuer, audience, and subject from an assertion issued for the intended job. Add exact claim matches such as `repository_id` and `ref` when the job should only run from a particular repository and branch.
+3. Grant the GitHub job `id-token: write`. Set `BIFROST_API_URL` to your instance and `BIFROST_ASSERTION_AUDIENCE` to the audience the job should request. Install the CLI from that instance and sign in.
+
+```sh
+python -m pip install "${BIFROST_API_URL}/api/cli/download/bifrost-cli.tar.gz"
+bifrost login --oidc --url "$BIFROST_API_URL" --audience "$BIFROST_ASSERTION_AUDIENCE"
+```
+
+4. Run a Bifrost command the Identity should be allowed to use and check that it succeeds. Test a job from outside the configured trust boundary and verify that sign-in is denied.
+
+Deploy all serving API replicas before enabling federation. Each login exchanges a fresh assertion for an access token. Editing, disabling, or deleting the federated credential revokes access tokens issued through it.
+
+See the [CLI authentication reference](/docs/sdk-reference/cli/#authentication) for Azure managed identity and assertion-file options. The [workload federation runbook](https://github.com/gobifrost/bifrost/blob/354092cd9c7d7455aabc7120a59fc78fec73c466/docs/runbooks/workload-identity-federation.md) covers issuer discovery, token claims, and the OAuth token exchange contract.
